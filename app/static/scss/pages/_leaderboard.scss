@@ -1,0 +1,67 @@
+/* app/static/scss/pages/_leaderboard.scss */
+@use '../base/variables' as *;
+@use '../base/mixins' as m;
+
+/* Stili specifici per la pagina Leaderboard */
+
+.leaderboard-title {
+  text-align: center;
+  color: var(--colore-brand); // Usa il blu primario
+  margin-bottom: var(--sp-5); // 32px
+}
+
+/* Wrapper per dare padding e sfondo alla tabella */
+.leaderboard-wrapper {
+  background-color: var(--colore-superficie); // Bianco o grigio scuro
+  padding: var(--sp-4); // 24px
+  border-radius: var(--radius-lg); // 16px
+  border: var(--bordo-base);
+  box-shadow: var(--ombra-md);
+}
+
+/* Stili per DataTables */
+#leaderboardTable {
+  // Rende la tabella meno densa
+  td, th {
+    padding: var(--sp-3) var(--sp-3); // 16px
+    vertical-align: middle;
+  }
+
+  // Stile per nickname link
+  td a {
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  // Stili per valori positivi/negativi (già presenti in Bootstrap, ma rafforziamo)
+  .profit-positive {
+    color: var(--colore-accento) !important; // Verde
+    font-weight: var(--font-weight-medium);
+  }
+  .profit-negative {
+    color: var(--colore-elimina) !important; // Rosso
+    font-weight: var(--font-weight-medium);
+  }
+
+  // Stile per percentuali e medie
+  .stat-rate, .stat-avg {
+    font-size: 0.9em;
+    color: var(--colore-testo-soft);
+  }
+
+  // Stile per header scuro (Bootstrap lo fa, ma assicuriamoci)
+  thead.table-dark {
+    th {
+      white-space: nowrap; // Evita a capo nei titoli
+    }
+  }
+}
+
+// Stile per messaggi di errore/vuoto
+.leaderboard-message {
+  margin-top: var(--sp-4);
+  text-align: center;
+}

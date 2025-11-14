@@ -1,0 +1,337 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+  <!-- MODIFICA: Titolo dinamico -->
+  {% if player %}
+     {% if current_user.id == player.id %}Modifica Profilo{% else %}Modifica Giocatore{% endif %}
+  {% else %}
+     Aggiungi Giocatore
+  {% endif %} | Poker Manager
+{% endblock %}
+
+{% block content %}
+<div class="container--narrow py-4">
+
+  <div class="mb-4">
+    <!-- MODIFICA: Logica pulsante "Indietro" -->
+    {% if player %}
+      {# Se stiamo modificando, torniamo sempre al dettaglio del giocatore #}
+      <a href="{{ url_for('players.detail', player_id=player.id) }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Annulla
+      </a>
+    {% else %}
+      {# Se stiamo creando (solo admin), torniamo alla lista #}
+      <a href="{{ url_for('players.list') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Torna all'Elenco
+      </a>
+    {% endif %}
+    <!-- FINE MODIFICA -->
+  </div>
+
+  <div class="card shadow-sm fade-in">
+    <div class="card-header bg-dark text-white">
+      <!-- MODIFICA: Titolo H1 dinamico -->
+      <h1 class="h4 mb-0 d-inline-flex align-items-center gap-2">
+        {% if player %}
+          {% if current_user.id == player.id %}
+            <i class="bi bi-person-circle"></i> Modifica il tuo Profilo
+          {% else %}
+            <i class="bi bi-pencil-square"></i> Modifica Giocatore: {{ player.nickname }}
+          {% endif %}
+        {% else %}
+          <i class="bi bi-person-plus-fill"></i> Aggiungi Nuovo Giocatore
+        {% endif %}
+      </h1>
+      <!-- FINE MODIFICA -->
+    </div>
+    <div class="card-body p-4 p-md-5">
+
+      {% if form.errors and not form.errors.items() %}
+        <div class="alert alert-danger" role="alert">
+          Si sono verificati errori nel form. Controlla i campi.
+        </div>
+      {% endif %}
+
+      <form method="POST" 
+            action="{{ url_for('players.edit_player', player_id=player.id) if player else url_for('players.add_player') }}" 
+            novalidate 
+            enctype="multipart/form-data">
+            
+        {{ form.csrf_token }}
+        {% set is_admin = current_user.is_admin or current_user.has_role('admin') %}
+
+        <div class="row g-3">
+          <div class="col-md-6 form-group">
+            {{ form.first_name.label(class="form-label") }}
+            {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else ""), autocomplete="given-name") }}
+            {% if form.first_name.errors %}
+              <div class="invalid-feedback">{{ form.first_name.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.last_name.label(class="form-label") }}
+            {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else ""), autocomplete="family-name") }}
+            {% if form.last_name.errors %}
+              <div class="invalid-feedback">{{ form.last_name.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.nickname.label(class="form-label") }}
+            <!-- MODIFICA: Disabilitato se non sei admin E stai modificando -->
+            {{ form.nickname(
+                 class="form-control" + (" is-invalid" if form.nickname.errors else ""), 
+                 required=True, 
+                 autocomplete="nickname",
+                 disabled=(not is_admin and player)
+               ) 
+            }}
+            {% if form.nickname.errors %}
+              <div class="invalid-feedback">{{ form.nickname.errors[0] }}</div>
+            {% elif not is_admin and player %}
+              <small class="form-text text-muted">Solo un admin può modificare il nickname.</small>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), required=True, autocomplete="email") }}
+            {% if form.email.errors %}
+              <div class="invalid-feedback">{{ form.email.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.country.label(class="form-label") }}
+            {{ form.country(class="form-control" + (" is-invalid" if form.country.errors else ""), autocomplete="country-name") }}
+            {% if form.country.errors %}
+              <div class="invalid-feedback">{{ form.country.errors[0] }}</div>
+            {% endif %}
+             <small class="form-text text-muted">Codice ISO a 2 lettere (es. IT, US).</small>
+          </div>
+          
+          <div class="col-md-6 form-group">
+            {{ form.avatar.label(class="form-label") }}
+
+            <div class="mb-2">
+              <img src="{{ player.avatar_url if player else url_for('static', filename='images/default-avatar.png') }}" 
+                   alt="Anteprima Avatar" 
+                   id="avatarPreview" 
+                   class="rounded" 
+                   style="width: 80px; height: 80px; object-fit: cover; border: 1px solid #dee2e6;">
+              
+              {% if player %}
+                <div class="form-check mt-2">
+                  {{ form.delete_avatar(class="form-check-input", id="deleteAvatarCheck") }}
+                  <label class="form-check-label text-danger" for="deleteAvatarCheck">
+                    <i class="bi bi-trash"></i> Rimuovi foto
+                  </label>
+                </div>
+              {% endif %}
+            </div>
+            
+            {{ 
+              form.avatar(
+                class="form-control" + (" is-invalid" if form.avatar.errors else ""), 
+                accept="image/*", 
+                capture="environment",
+                id="avatarUpload" 
+              ) 
+            }}
+            {% if form.avatar.errors %}
+              <div class="invalid-feedback">{{ form.avatar.errors[0] }}</div>
+            {% else %}
+              <small class="form-text text-muted">Carica un file o scatta una foto.</small>
+            {% endif %}
+          </div>
+          
+          <div class="col-12 mt-4">
+            <hr>
+          </div>
+
+          {% if player %}
+            <div class="col-12">
+              <p class="text-muted">
+                Compila i campi seguenti solo se vuoi cambiare la password. Lascia vuoto per non modificare.
+              </p>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.old_password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.old_password(class="form-control" + (" is-invalid" if form.old_password.errors else ""), autocomplete="current-password", id="old_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#old_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.old_password.errors %}
+                  <div class="invalid-feedback">{{ form.old_password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <!-- Spazio vuoto per allineamento -->
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password", id="new_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#new_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.password.errors %}
+                  <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.confirm_password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password", id="confirm_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#confirm_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.confirm_password.errors %}
+                  <div class="invalid-feedback">{{ form.confirm_password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+          
+          {% else %}
+            <!-- Sezione 'Aggiungi Giocatore' (password obbligatoria) -->
+            <div class="col-12">
+              <p class="text-muted">
+                Imposta una password per il nuovo giocatore.
+              </p>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password", id="new_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#new_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.password.errors %}
+                  <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.confirm_password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password", id="confirm_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#confirm_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.confirm_password.errors %}
+                  <div class="invalid-feedback">{{ form.confirm_password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div> 
+        
+        <div class="mt-4 pt-3 border-top">
+          <button type="submit" class="btn btn-success d-inline-flex align-items-center gap-2">
+            {% if player %}
+              <i class="bi bi-check-lg"></i> Salva Modifiche
+            {% else %}
+              <i class="bi bi-check-lg"></i> Crea Giocatore
+            {% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  
+  // Script per 'mostra password'
+  const toggleButtons = document.querySelectorAll('.password-toggle-btn');
+  toggleButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+      const targetInput = document.querySelector(this.dataset.bsTarget);
+      const icon = this.querySelector('i');
+      if (targetInput) {
+        if (targetInput.type === 'password') {
+          targetInput.type = 'text';
+          icon.classList.remove('bi-eye-fill');
+          icon.classList.add('bi-eye-slash-fill');
+        } else {
+          targetInput.type = 'password';
+          icon.classList.remove('bi-eye-slash-fill');
+          icon.classList.add('bi-eye-fill');
+        }
+      }
+    });
+  });
+
+  // --- LOGICA COMBINATA PER AVATAR ---
+  const avatarUploadInput = document.getElementById('avatarUpload');
+  const avatarPreviewImage = document.getElementById('avatarPreview');
+  const deleteCheck = document.getElementById('deleteAvatarCheck');
+  const defaultAvatarUrl = "{{ url_for('static', filename='images/default-avatar.png') }}";
+  let originalSrcOnLoad = avatarPreviewImage ? avatarPreviewImage.src : defaultAvatarUrl;
+
+  // 1. Script per l'anteprima (quando si carica un file)
+  if (avatarUploadInput && avatarPreviewImage) {
+    avatarUploadInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            avatarPreviewImage.src = e.target.result;
+            avatarPreviewImage.style.opacity = "1";
+            
+            if (deleteCheck) {
+              deleteCheck.checked = false;
+            }
+          }
+          reader.readAsDataURL(file);
+        }
+      } else {
+         if (deleteCheck && deleteCheck.checked) {
+            avatarPreviewImage.src = defaultAvatarUrl;
+            avatarPreviewImage.style.opacity = "0.5";
+         } else {
+            avatarPreviewImage.src = originalSrcOnLoad;
+            avatarPreviewImage.style.opacity = "1";
+         }
+      }
+    });
+  }
+
+  // 2. Script per la checkbox "Rimuovi foto"
+  if (deleteCheck && avatarPreviewImage) {
+    deleteCheck.addEventListener('change', function() {
+      if (this.checked) {
+        if (avatarUploadInput) {
+          avatarUploadInput.value = ""; 
+        }
+        avatarPreviewImage.src = defaultAvatarUrl;
+        avatarPreviewImage.style.opacity = "0.5";
+      } else {
+        avatarPreviewImage.src = originalSrcOnLoad;
+        avatarPreviewImage.style.opacity = "1";
+      }
+    });
+  }
+  // --- FINE LOGICA AVATAR ---
+
+});
+</script>
+{% endblock %}

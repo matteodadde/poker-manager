@@ -1,0 +1,83 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Accedi - Poker Manager{% endblock %}
+
+{% block content %}
+<div class="container--narrow my-5">
+  
+  <div class="card shadow-lg border-0">
+    <div class="card-body p-4 p-md-5">
+
+      <h2 class="h3 card-title text-center mb-4">Accedi a Poker Manager</h2>
+      
+      {% include 'components/messages.html' %}
+
+      <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+        {{ form.csrf_token }}
+
+        <!-- Email -->
+        <div class="form-group mb-3">
+          {{ form.email.label(class="form-label") }}
+          {% if form.email.errors %}
+            {{ form.email(class="form-control form-control-lg is-invalid", required=True, autofocus=True, autocomplete="email") }}
+            <div class="invalid-feedback">
+              {{ form.email.errors[0] }}
+            </div>
+          {% else %}
+            {{ form.email(class="form-control form-control-lg", required=True, autofocus=True, autocomplete="email") }}
+          {% endif %}
+        </div>
+
+        <!-- Password con bottone occhio -->
+        <div class="form-group mb-3 position-relative">
+          {{ form.password.label(class="form-label") }}
+          <div class="input-group">
+            {% if form.password.errors %}
+              {{ form.password(class="form-control form-control-lg is-invalid", required=True, autocomplete="current-password", id="passwordField") }}
+            {% else %}
+              {{ form.password(class="form-control form-control-lg", required=True, autocomplete="current-password", id="passwordField") }}
+            {% endif %}
+            <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+              <i class="bi bi-eye" id="toggleIcon"></i>
+            </button>
+          </div>
+          {% if form.password.errors %}
+            <div class="invalid-feedback d-block">
+              {{ form.password.errors[0] }}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Remember me -->
+        <div class="form-check mb-4">
+          {{ form.remember(class="form-check-input", id="rememberCheck") }}
+          {{ form.remember.label(class="form-check-label", for="rememberCheck") }}
+        </div>
+
+        <!-- Submit -->
+        <div>
+          {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Script per mostrare/nascondere password -->
+<script>
+  const togglePassword = document.querySelector('#togglePassword');
+  const passwordField = document.querySelector('#passwordField');
+  const toggleIcon = document.querySelector('#toggleIcon');
+
+  togglePassword.addEventListener('click', function () {
+    const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordField.setAttribute('type', type);
+
+    // Cambia l'icona dell'occhio
+    toggleIcon.classList.toggle('bi-eye');
+    toggleIcon.classList.toggle('bi-eye-slash');
+  });
+</script>
+{% endblock %}

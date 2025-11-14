@@ -1,0 +1,60 @@
+/* ----------------------------------------------
+   STILI DI BASE GLOBALI
+   (Cosa applichiamo a <body>, <a>, <h1>, ecc.)
+---------------------------------------------- */
+@use "mixins" as m;
+
+body {
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-regular);
+  line-height: 1.6;
+  
+  background-color: var(--colore-sfondo);
+  color: var(--colore-testo);
+  
+  /* Transizione "liscia" per il cambio tema (dark/light) */
+  @include m.transition(background-color color, 0.2s, ease-out);
+}
+
+/* Link globali */
+a {
+  color: var(--colore-brand);
+  text-decoration: none;
+  @include m.transition(color);
+  
+  &:hover {
+    color: hsl(var(--colore-brand-hsl), 71%, 60%); /* Leggermente più chiaro/brillante */
+    text-decoration: underline;
+  }
+}
+
+/* Titoli */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  margin-bottom: var(--sp-3); /* 16px */
+  /* Colore leggermente più scuro del testo normale (opzionale) */
+  color: hsl(var(--colore-testo-hsl), 20%, 15%); 
+  
+  /* Correzione per dark mode, altrimenti diventano NERI */
+  [data-theme="dark"] & {
+    color: hsl(var(--colore-testo-hsl), 20%, 95%);
+  }
+}
+
+/* Font size scalabili (opzionale ma consigliato) */
+h1 { font-size: 2.5rem; }  /* 40px */
+h2 { font-size: 2rem; }    /* 32px */
+h3 { font-size: 1.5rem; }  /* 24px */
+h4 { font-size: 1.25rem; } /* 20px */
+
+p {
+  margin-bottom: var(--sp-3); /* 16px */
+}
+
+/* Imposta il focus-ring per l'accessibilità (es. navigazione con TAB) */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}

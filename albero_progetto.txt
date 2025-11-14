@@ -1,0 +1,200 @@
+poker-manager
+├── app
+│   ├── config
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── development.py
+│   │   ├── production.py
+│   │   └── testing.py
+│   ├── models
+│   │   ├── player
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── stats.py
+│   │   │   └── validators.py
+│   │   ├── tournament
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── stats.py
+│   │   │   └── validators.py
+│   │   ├── tournament_player
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── stats.py
+│   │   │   └── validators.py
+│   │   ├── __init__.py
+│   │   └── roles.py
+│   ├── routes
+│   │   ├── auth
+│   │   │   ├── __init__.py
+│   │   │   ├── forms.py
+│   │   │   └── views.py
+│   │   ├── errors
+│   │   │   └── errors.py
+│   │   ├── main
+│   │   │   ├── __init__.py
+│   │   │   ├── utils.py
+│   │   │   └── views.py
+│   │   ├── players
+│   │   │   ├── __init__.py
+│   │   │   ├── forms.py
+│   │   │   ├── utils.py
+│   │   │   └── views.py
+│   │   ├── statistics
+│   │   │   ├── __init__.py
+│   │   │   ├── utils.py
+│   │   │   └── views.py
+│   │   ├── tournaments
+│   │   │   ├── __init__.py
+│   │   │   ├── forms.py
+│   │   │   └── views.py
+│   │   └── __init__.py
+│   ├── static
+│   │   ├── css
+│   │   │   ├── main.css
+│   │   │   └── main.css.map
+│   │   ├── fonts
+│   │   │   └── bootstrap-icons
+│   │   │       ├── bootstrap-icons.woff
+│   │   │       └── bootstrap-icons.woff2
+│   │   ├── images
+│   │   │   ├── players
+│   │   │   └── default-avatar.png
+│   │   ├── js
+│   │   │   ├── charts
+│   │   │   │   └── charts.js
+│   │   │   ├── players
+│   │   │   │   └── players.js
+│   │   │   ├── statistics
+│   │   │   │   └── leaderboard.js
+│   │   │   ├── tournaments
+│   │   │   │   └── tournaments.js
+│   │   │   └── utils.js
+│   │   └── scss
+│   │       ├── base
+│   │       │   ├── _base.scss
+│   │       │   ├── _functions.scss
+│   │       │   ├── _mixins.scss
+│   │       │   ├── _reset.scss
+│   │       │   └── _variables.scss
+│   │       ├── components
+│   │       │   ├── _grafico.scss
+│   │       │   ├── _index.scss
+│   │       │   └── _tornei.scss
+│   │       ├── layout
+│   │       │   └── _layout.scss
+│   │       ├── pages
+│   │       │   ├── _home.scss
+│   │       │   ├── _leaderboard.scss
+│   │       │   ├── _players.scss
+│   │       │   └── _tournaments.scss
+│   │       └── main.scss
+│   ├── templates
+│   │   ├── auth
+│   │   │   └── login.html
+│   │   ├── components
+│   │   │   ├── footer.html
+│   │   │   ├── messages.html
+│   │   │   └── navbar.html
+│   │   ├── errors
+│   │   │   ├── 400.html
+│   │   │   ├── 403.html
+│   │   │   ├── 404.html
+│   │   │   └── 500.html
+│   │   ├── layouts
+│   │   │   └── base.html
+│   │   ├── main
+│   │   │   ├── about.html
+│   │   │   └── index.html
+│   │   ├── players
+│   │   │   ├── add_edit.html
+│   │   │   ├── detail.html
+│   │   │   └── list.html
+│   │   ├── statistics
+│   │   │   └── leaderboard.html
+│   │   └── tournaments
+│   │       ├── add_edit.html
+│   │       ├── detail.html
+│   │       └── list.html
+│   ├── tests
+│   │   ├── commands
+│   │   │   └── test_commands.py
+│   │   ├── integration
+│   │   │   ├── test_endpoint.py
+│   │   │   └── test_services_integration.py
+│   │   ├── models
+│   │   │   ├── player
+│   │   │   │   ├── test_player_model.py
+│   │   │   │   └── test_player_stats.py
+│   │   │   ├── roles
+│   │   │   │   └── test_roles.py
+│   │   │   ├── tournament
+│   │   │   │   ├── test_tournament_model.py
+│   │   │   │   └── test_tournament_stats.py
+│   │   │   └── tournament_player
+│   │   │       ├── test_tournament_player_model.py
+│   │   │       └── test_tournament_player_stats.py
+│   │   ├── performance
+│   │   │   └── test_performance_queries.py
+│   │   ├── routes
+│   │   │   ├── auth
+│   │   │   │   └── test_auth_views.py
+│   │   │   ├── main
+│   │   │   │   └── test_main_routes.py
+│   │   │   ├── players
+│   │   │   │   ├── test_players_form.py
+│   │   │   │   ├── test_players_routes.py
+│   │   │   │   └── test_players_utils.py
+│   │   │   ├── statistics
+│   │   │   │   └── test_statistics_routes.py
+│   │   │   └── tournaments
+│   │   │       ├── test_tournaments_routes.py
+│   │   │       └── test_tournaments_utils.py
+│   │   ├── utils
+│   │   │   ├── test_decimal.py
+│   │   │   └── test_jinja_filters.py
+│   │   └── conftest.py
+│   ├── utils
+│   │   ├── decimal.py
+│   │   ├── decorators.py
+│   │   └── filters.py
+│   ├── __init__.py
+│   └── logging_config.py
+├── docs
+│   ├── API.md
+│   ├── API_REFERENCE.md
+│   ├── ARCHITECTURE.md
+│   ├── COMPONENTS.md
+│   ├── DATA.md
+│   ├── DECISIONS.md
+│   ├── DEPLOYMENT.md
+│   ├── ROADMAP.md
+│   ├── STYLEGUIDE.md
+│   └── TESTING.md
+├── scripts
+│   ├── clear_everything.ps1
+│   ├── genera_albero.py
+│   ├── genera_password.py
+│   ├── init_db.sh
+│   ├── Set-Dev.ps1
+│   ├── Set-Prod.ps1
+│   └── start.ps1
+├── .dockerignore
+├── .env.example
+├── .env.local
+├── .env.production
+├── .gitignore
+├── app_factory.py
+├── commands.py
+├── docker-compose.yml
+├── Dockerfile
+├── Makefile
+├── package-lock.json
+├── package.json
+├── private_data.json
+├── README.md
+├── requirements.txt
+├── run.py
+├── seed_data.py
+├── setup.cfg
+└── wsgi.py

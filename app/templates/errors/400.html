@@ -1,0 +1,12 @@
+{% extends 'layouts/base.html' %}
+{% block title %}Richiesta non valida | Poker Manager{% endblock %}
+
+{% block content %}
+<section class="error-page" aria-labelledby="error-title" role="main">
+  <h1 id="error-title">Errore 400 - Richiesta non valida</h1>
+  <p>La richiesta inviata non può essere processata.</p>
+  <p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary" role="button">Torna alla Homepage</a>
+  </p>
+</section>
+{% endblock %}

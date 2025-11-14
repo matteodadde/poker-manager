@@ -1,0 +1,71 @@
+<footer role="contentinfo" class="bg-dark text-white py-4 mt-auto" aria-label="Piè di pagina">
+  <div class="container">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-4">
+      
+      <!-- Brand e descrizione -->
+      <div class="d-flex align-items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+             class="bi bi-suit-spade" viewBox="0 0 16 16" aria-hidden="true">
+        </svg>
+        <div>
+          <h5 class="m-0">Poker Manager</h5>
+          <p class="small text-white-50 mb-0">
+            Creato con <span class="text-danger">&hearts;</span> per gli amanti del poker.
+          </p>
+        </div>
+      </div>
+
+      <!-- Link -->
+      <nav aria-label="Link del footer">
+        <ul class="list-unstyled d-flex flex-wrap gap-3 mb-0">
+          <li><a href="{{ url_for('main.about') }}" class="link-light link-opacity-75 link-opacity-100-hover">About</a></li>
+          <li><a href="#" class="link-light link-opacity-75 link-opacity-100-hover">Privacy Policy</a></li>
+          <li><a href="#" class="link-light link-opacity-75 link-opacity-100-hover">Termini di Servizio</a></li>
+          <li><a href="#" class="link-light link-opacity-75 link-opacity-100-hover">Contattaci</a></li>
+        </ul>
+      </nav>
+
+      <!-- Social -->
+      <section aria-label="Link social">
+        <ul class="list-unstyled d-flex gap-3 mb-0">
+          <li>
+            <a href="https://x.com/matteodadde" target="_blank" class="link-light link-opacity-75 link-opacity-100-hover d-inline-flex"
+               aria-label="Seguici su X">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                   class="bi bi-twitter-x" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+              </svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://github.com/matteodadde" target="_blank" class="link-light link-opacity-75 link-opacity-100-hover d-inline-flex"
+               aria-label="Seguici su GitHub">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                   class="bi bi-github" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+              </svg>
+            </a>
+          </li>
+          <li>
+            <a href="https://www.instagram.com/matteo_dadde" target="_blank" class="link-light link-opacity-75 link-opacity-100-hover d-inline-flex"
+               aria-label="Seguici su Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                   class="bi bi-instagram" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M8 0C5.8 0 5.555.01 4.703.05c-.85.04-1.432.176-1.95.376a3.902 3.902 0 0 0-1.43.931 3.902 3.902 0 0 0-.931 1.43c-.2.518-.336 1.1-.376 1.95C.01 5.555 0 5.8 0 8c0 2.2.01 2.445.05 3.297.04.85.176 1.432.376 1.95.2.518.465.978.931 1.43a3.902 3.902 0 0 0 1.43.931c.518.2 1.1.336 1.95.376.852.04 1.097.05 3.297.05 2.2 0 2.445-.01 3.297-.05.85-.04 1.432-.176 1.95-.376a3.902 3.902 0 0 0 1.43-.931 3.902 3.902 0 0 0 .931-1.43c.2-.518.336-1.1.376-1.95.04-.852.05-1.097.05-3.297 0-2.2-.01-2.445-.05-3.297-.04-.85-.176-1.432-.376-1.95a3.902 3.902 0 0 0-.931-1.43 3.902 3.902 0 0 0-1.43-.931c-.518-.2-1.1-.336-1.95-.376C10.445.01 10.2 0 8 0Zm0 1.44c2.17 0 2.417.01 3.273.048.7.032 1.08.155 1.332.258.336.13.576.285.832.54.255.256.41.496.54.832.103.252.226.632.258 1.332.038.856.048 1.103.048 3.273s-.01 2.417-.048 3.273c-.032.7-.155 1.08-.258 1.332a2.482 2.482 0 0 1-.54.832 2.482 2.482 0 0 1-.832.54c-.252.103-.632.226-1.332.258-.856.038-1.103.048-3.273.048s-2.417-.01-3.273-.048c-.7-.032-1.08-.155-1.332-.258a2.482 2.482 0 0 1-.832-.54 2.482 2.482 0 0 1-.54-.832c-.103-.252-.226-.632-.258-1.332C1.45 10.417 1.44 10.17 1.44 8s.01-2.417.048-3.273c.032-.7.155-1.08.258-1.332a2.482 2.482 0 0 1 .54-.832 2.482 2.482 0 0 1 .832-.54c.252-.103.632-.226 1.332-.258C5.583 1.45 5.83 1.44 8 1.44Zm0 2.5a4.06 4.06 0 1 0 0 8.12 4.06 4.06 0 0 0 0-8.12Zm0 6.72a2.66 2.66 0 1 1 0-5.32 2.66 2.66 0 0 1 0 5.32Zm4.4-6.96a.96.96 0 1 1-1.92 0 .96.96 0 0 1 1.92 0Z"/>
+              </svg>
+            </a>
+          </li>
+        </ul>
+      </section>
+
+    </div>
+
+    <hr class="border-secondary my-4">
+
+    <div class="text-center">
+      <p class="small text-white-50 mb-0">
+        &copy; {{ current_year }} Poker Manager. Tutti i diritti riservati.
+      </p>
+    </div>
+  </div>
+</footer>

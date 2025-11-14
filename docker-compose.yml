@@ -1,0 +1,120 @@
+services:
+  # ---------------------------------------
+  # 1. WEB APP (Produzione – Gunicorn)
+  # ---------------------------------------
+  pokerapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: poker-manager:latest
+    container_name: pokerapp
+    # COMANDO SEMPLIFICATO: 'wait-for-db.sh' non serve.
+    # 'depends_on' con 'service_healthy' gestisce già l'attesa.
+    command: gunicorn -w 4 -b 0.0.0.0:5000 wsgi:app
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env.production
+    # VOLUME AGGIUNTO: Collega il codice locale alla cartella /app del container.
+    # Essenziale per vedere le modifiche e per far funzionare le migrazioni.
+    volumes:
+      - .:/app
+    depends_on:
+      pokerdb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      pokerapp_migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ---------------------------------------
+  # 2. MIGRAZIONI (Alembic)
+  # ---------------------------------------
+  pokerapp_migrate:
+    # BUILD AGGIUNTO: Permette di costruire l'immagine se non esiste
+    # quando si usa 'docker-compose run'.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: poker-manager:latest
+    container_name: pokerapp_migrate
+    env_file:
+      - .env.production
+    # VOLUME AGGIUNTO: Fondamentale per leggere/scrivere la cartella 'migrations'
+    # che si trova sul tuo computer (host).
+    volumes:
+      - .:/app
+    depends_on:
+      pokerdb:
+        condition: service_healthy
+    command: flask db upgrade
+    restart: "no"
+
+  # ---------------------------------------
+  # 3. SEED DATA
+  # ---------------------------------------
+  pokerapp_seed:
+    # BUILD AGGIUNTO: Come sopra.
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: poker-manager:latest
+    container_name: pokerapp_seed
+    env_file:
+      - .env.production
+    # VOLUME AGGIUNTO: Essenziale per trovare ed eseguire 'seed_data.py'.
+    volumes:
+      - .:/app
+    depends_on:
+      pokerapp_migrate:
+        condition: service_completed_successfully
+    # COMANDO SEMPLIFICATO: 'wait-for-db.sh' non serve.
+    # La dipendenza da 'pokerapp_migrate' (che dipende da 'pokerdb')
+    # garantisce che il DB sia pronto.
+    command: python seed_data.py
+    restart: "no"
+
+  # ---------------------------------------
+  # 4. POSTGRES DATABASE
+  # ---------------------------------------
+  pokerdb:
+    image: postgres:15-alpine
+    container_name: pokerdb
+    env_file:
+      - .env.production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Il healthcheck è l'elemento chiave che permette agli
+    # altri servizi di attendere che il DB sia pronto.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # ---------------------------------------
+  # 5. REDIS (Rate Limiting + Sessioni)
+  # ---------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: pokerredis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+# ---------------------------------------
+# VOLUMES PERSISTENTI
+# ---------------------------------------
+volumes:
+  postgres_data:
+    name: poker_postgres_data
