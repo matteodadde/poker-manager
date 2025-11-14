@@ -10,4 +10,4 @@ echo "==> (ENTRYPOINT) Esecuzione migrazioni database..."
 echo "==> (ENTRYPOINT) Avvio di Gunicorn..."
 # 'exec' è importante, sostituisce questo script con gunicorn
 # invece di lasciarli girare entrambi.
-exec /usr/local/bin/gunicorn -w 4 -b 0.0.0.0:5000 wsgi:app
+exec /usr/local/bin/gunicorn -w 4 -b 0.0.0.0:$PORT wsgi:app
