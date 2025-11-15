@@ -310,6 +310,30 @@
 </div>
 {% endif %}
 
+<div class="modal fade" id="avatarRemoveConfirmModal" tabindex="-1" aria-labelledby="avatarRemoveConfirmLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="avatarRemoveConfirmLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> Conferma Rimozione
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <div class="modal-body">
+        Sei sicuro di voler rimuovere il tuo avatar?
+        <br>
+        <small class="text-muted">Questa azione non può essere annullata.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="button" id="avatarConfirmDeleteBtn" class="btn btn-danger">
+          <i class="bi bi-trash3-fill"></i> Rimuovi Davvero
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 
@@ -383,9 +407,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const avatarPreviewMain = document.getElementById('avatarPreviewMain');
   const avatarSpinner = document.getElementById('avatarSpinner');
   const avatarModal = new bootstrap.Modal(document.getElementById('avatarModal'));
-  
-  // *** NUOVO RIFERIMENTO ***
   const avatarEditBtn = document.getElementById('avatarEditBtn'); 
+  
+  // --- NUOVI RIFERIMENTI ---
+  const avatarRemoveConfirmModal = document.getElementById('avatarRemoveConfirmModal');
+  const avatarConfirmDeleteBtn = document.getElementById('avatarConfirmDeleteBtn');
+  let bsAvatarRemoveConfirmModal; // Istanza Bootstrap del modal
+  if (avatarRemoveConfirmModal) {
+    bsAvatarRemoveConfirmModal = new bootstrap.Modal(avatarRemoveConfirmModal);
+  }
+  // --- FINE NUOVI RIFERIMENTI ---
   
   const uploadInput = document.getElementById('avatarUploadInput');
   const webcamBtn = document.getElementById('avatarWebcamBtn');
@@ -405,10 +436,9 @@ document.addEventListener('DOMContentLoaded', function() {
   let cropper = null;
   let webcamStream = null;
   
-  // === Funzioni di Utility ===
+  // === Funzioni di Utility (Invariate) ===
   
   function showAlert(message, type = 'danger', containerId = 'avatarModalAlerts') {
-    // ... (Invariata)
     const container = document.getElementById(containerId);
     if (container) {
       container.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
@@ -419,12 +449,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function hideAlert(containerId = 'avatarModalAlerts') {
-    // ... (Invariata)
     const container = document.getElementById(containerId);
     if (container) container.innerHTML = '';
   }
   
-  // *** FUNZIONE MODIFICATA ***
   function showMainSpinner(show) {
     if (show) {
       avatarPreviewMain.style.display = 'none';
@@ -438,7 +466,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function stopWebcam() {
-    // ... (Invariata)
     if (webcamStream) {
       webcamStream.getTracks().forEach(track => track.stop());
       webcamStream = null;
@@ -448,7 +475,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function startWebcam() {
-    // ... (Invariata)
     stopWebcam(); 
     hideAlert();
     if (cropper) cropper.destroy();
@@ -469,7 +495,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function initCropper(source) {
-    // ... (Invariata)
     stopWebcam();
     hideAlert();
     
@@ -496,14 +521,8 @@ document.addEventListener('DOMContentLoaded', function() {
     saveCropBtn.style.display = 'block';
   }
 
-  // === Gestione Eventi (MODIFICATA) ===
+  // === Gestione Eventi (Punti 1-6 Invariati) ===
   
-  // *** RIMOSSO ***
-  // // 1. Clic sull'avatar apre il modal...
-  // if (avatarPreviewMain && playerId) { ... } 
-  // (Ora gestito da data-bs-toggle per lo zoom)
-
-  // *** NUOVO ***
   // 1. Clic sull'ICONA MODIFICA apre il modal di editing
   if (avatarEditBtn) {
     avatarEditBtn.addEventListener('click', (e) => {
@@ -512,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // 2. Chiusura Modal: resetta tutto (Invariato)
+  // 2. Chiusura Modal: resetta tutto
   document.getElementById('avatarModal').addEventListener('hidden.bs.modal', () => {
     stopWebcam();
     if (cropper) cropper.destroy();
@@ -523,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
     hideAlert();
   });
 
-  // 3. Selezione File (Invariato)
+  // 3. Selezione File
   uploadInput.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
@@ -537,10 +556,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // 4. Avvio Webcam (Invariato)
+  // 4. Avvio Webcam
   webcamBtn.addEventListener('click', startWebcam);
   
-  // 5. Stop Webcam (Invariato)
+  // 5. Stop Webcam
   webcamStopBtn.addEventListener('click', stopWebcam);
   
   // 6. Scatto Foto (MODIFICATO per specchiare)
@@ -605,39 +624,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 'image/png');
   });
   
-  // 8. Rimozione Avatar (Invariato)
-  if (removeBtn) {
-    removeBtn.addEventListener('click', () => {
-      if (!confirm("Sei sicuro di voler rimuovere il tuo avatar?")) {
-        return;
-      }
+  // 8. Rimozione Avatar (MODIFICATO per usare un modal di conferma)
+  if (removeBtn && avatarConfirmDeleteBtn && bsAvatarRemoveConfirmModal) {
       
-      avatarModal.hide();
-      showMainSpinner(true);
-      hideAlert('avatarApiAlerts');
-      
-      fetch(`/api/v1/players/${playerId}/avatar`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRFToken': csrfToken 
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          location.reload(); // Ricarica per mostrare l'avatar di default
-        } else {
-           showAlert(data.error || "Errore durante la rimozione.", 'danger', 'avatarApiAlerts');
-        }
-      })
-      .catch(err => {
-        console.error("Errore Fetch DELETE:", err);
-        showAlert("Errore di connessione con il server.", 'danger', 'avatarApiAlerts');
-      })
-      .finally(() => {
-        showMainSpinner(false);
+      // FASE 1: Il pulsante "Rimuovi Foto" nel modal di modifica
+      // ora apre il modal di CONFERMA.
+      removeBtn.addEventListener('click', () => {
+        // Nascondi il modal di editing
+        avatarModal.hide();
+        // Mostra il modal di conferma
+        bsAvatarRemoveConfirmModal.show();
       });
-    });
+
+      // FASE 2: Il pulsante "Rimuovi Davvero" nel modal di conferma
+      // esegue l'azione fetch.
+      avatarConfirmDeleteBtn.addEventListener('click', () => {
+        // Nascondi il modal di conferma
+        bsAvatarRemoveConfirmModal.hide();
+        
+        showMainSpinner(true);
+        hideAlert('avatarApiAlerts');
+        
+        fetch(`/api/v1/players/${playerId}/avatar`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRFToken': csrfToken 
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            location.reload(); // Ricarica per mostrare l'avatar di default
+          } else {
+             showAlert(data.error || "Errore durante la rimozione.", 'danger', 'avatarApiAlerts');
+          }
+        })
+        .catch(err => {
+          console.error("Errore Fetch DELETE:", err);
+          showAlert("Errore di connessione con il server.", 'danger', 'avatarApiAlerts');
+        })
+        .finally(() => {
+          showMainSpinner(false);
+        });
+      });
   }
 
 });
