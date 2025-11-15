@@ -24,4 +24,4 @@ Get-Content $envFile | ForEach-Object {
     [System.Environment]::SetEnvironmentVariable($key, $value, "Process")
 }
 
-Write-Host "Ambiente di produzione impostato! Docker Compose può essere avviato." -ForegroundColor Green
+Write-Host "Ambiente di produzione impostato! Docker Compose puo' essere avviato." -ForegroundColor Green
