@@ -11,59 +11,64 @@
     </a>
   </div>
 
-  <div class="d-flex align-items-center mb-4 fade-in">
-    <a href="#" 
-       data-bs-toggle="modal" 
-       data-bs-target="#avatarModal" 
-       title="Clicca per ingrandire l'avatar">
-      <img src="{{ player.avatar_url }}" 
-           alt="Avatar {{ player.nickname }}" 
-           class="player-avatar"
-           style="cursor: pointer;">
-    </a>
-    
-    <div>
-      <h1 class="h3 mb-0">
-        {{ stats.country_emoji | safe }} {{ player.nickname }}
-      </h1>
-      <p class="text-muted mb-0">
-        {{ player.first_name or '' }} {{ player.last_name or '' }}
-      </p>
-      <small class="text-muted">{{ player.email }}</small>
-    </div>
-    
-    <!-- 
-      MODIFICA: 
-      Logica per visualizzazione pulsanti Modifica / Elimina
-    -->
-    <div class="ms-auto d-flex gap-2">
-      
-      <!-- PULSANTE MODIFICA: Visibile se Admin O se è il proprietario del profilo -->
-      {% set is_admin = current_user.is_admin or current_user.has_role('admin') %}
-      {% if is_admin or current_user.id == player.id %}
-        <a href="{{ url_for('players.edit_player', player_id=player.id) }}"
-           class="btn btn-outline-primary d-inline-flex align-items-center gap-1"
-           aria-label="Modifica {{ player.nickname }}">
-          <i class="bi bi-pencil-fill"></i> 
-          {% if current_user.id == player.id %}Modifica Profilo{% else %}Modifica{% endif %}
-        </a>
-      {% endif %}
+{# 
+  MODIFICHE APPLICATE:
+  1. Main Div: Cambiato 'd-flex' in 'd-md-flex' -> diventa flex (riga) solo da schermi medi in su.
+  2. Main Div: Aggiunto 'text-center text-md-start' -> su mobile (xs, sm) centra tutto, su desktop (md+) allinea a sinistra.
+  3. Avatar <a>: Aggiunto 'me-md-3' per dare spazio a destra all'avatar SOLO su desktop.
+  4. Buttons Div: Cambiato 'ms-auto' in 'ms-md-auto' -> spinge a destra SOLO su desktop.
+  5. Buttons Div: Aggiunto 'mt-3 mt-md-0' -> aggiunge spazio SOPRA i bottoni SOLO su mobile.
+  6. Buttons Div: Aggiunto 'justify-content-center justify-content-md-start' -> Centra i bottoni su mobile.
+#}
 
-      <!-- PULSANTE ELIMINA: Visibile SOLO se Admin -->
-      {% if is_admin %}
-        <button type="button" 
-                class="btn btn-outline-danger d-inline-flex align-items-center gap-1" 
-                data-bs-toggle="modal" 
-                data-bs-target="#deletePlayerModal"
-                data-player-id="{{ player.id }}"
-                data-player-nickname="{{ player.nickname }}"
-                aria-label="Elimina {{ player.nickname }}">
-          <i class="bi bi-trash3-fill"></i> Elimina
-        </button>
-      {% endif %}
-    </div>
-    <!-- FINE MODIFICA -->
+<div class="d-md-flex align-items-center text-center text-md-start mb-4 fade-in">
+
+  <a href="#" 
+     data-bs-toggle="modal" 
+     data-bs-target="#avatarModal" 
+     title="Clicca per ingrandire l'avatar"
+     class="d-inline-block d-md-block me-md-3"> {# <-- MODIFICA QUI #}
+    <img src="{{ player.avatar_url }}" 
+         alt="Avatar {{ player.nickname }}" 
+         class="player-avatar"
+         style="cursor: pointer;">
+  </a>
+  
+  <div>
+    <h1 class="h3 mb-0">
+      {{ stats.country_emoji | safe }} {{ player.nickname }}
+    </h1>
+    <p class="text-muted mb-0">
+      {{ player.first_name or '' }} {{ player.last_name or '' }}
+    </p>
+    <small class="text-muted">{{ player.email }}</small>
   </div>
+  
+  <div class="ms-md-auto d-flex gap-2 mt-3 mt-md-0 justify-content-center justify-content-md-start"> {# <-- MODIFICA QUI #}
+    
+    {% set is_admin = current_user.is_admin or current_user.has_role('admin') %}
+    {% if is_admin or current_user.id == player.id %}
+      <a href="{{ url_for('players.edit_player', player_id=player.id) }}"
+         class="btn btn-outline-primary d-inline-flex align-items-center gap-1"
+         aria-label="Modifica {{ player.nickname }}">
+        <i class="bi bi-pencil-fill"></i> 
+        {% if current_user.id == player.id %}Modifica Profilo{% else %}Modifica{% endif %}
+      </a>
+    {% endif %}
+
+    {% if is_admin %}
+      <button type="button" 
+              class="btn btn-outline-danger d-inline-flex align-items-center gap-1" 
+              data-bs-toggle="modal" 
+              data-bs-target="#deletePlayerModal"
+              data-player-id="{{ player.id }}"
+              data-player-nickname="{{ player.nickname }}"
+              aria-label="Elimina {{ player.nickname }}">
+        <i class="bi bi-trash3-fill"></i> Elimina
+      </button>
+    {% endif %}
+  </div>
+</div>
 
   <div class="card shadow-sm mb-4 fade-in" style="animation-delay: 0.1s;">
     <div class="card-header bg-dark text-white">
