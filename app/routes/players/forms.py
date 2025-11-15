@@ -1,11 +1,10 @@
 # app/routes/players/forms.py
 """
-Form WTForms per la creazione e la modifica dei giocatori (Player).
+Form WTForms per la modifica dei dati anagrafici dei giocatori (Player).
+La gestione dell'avatar è demandata a un endpoint API separato.
 """
 from flask_wtf import FlaskForm
-# --- MODIFICA: Importa i campi per l'upload di file ---
-from flask_wtf.file import FileField, FileAllowed
-# --- FINE MODIFICA ---
+# --- MODIFICA: Rimossi FileField e FileAllowed ---
 from wtforms import StringField, PasswordField, SubmitField, SelectField, BooleanField
 from wtforms.validators import (
     DataRequired,
@@ -33,7 +32,7 @@ LISTA_PAESI = [
 
 
 class PlayerForm(FlaskForm):
-    """Form per creare o modificare un giocatore."""
+    """Form per modificare i dati anagrafici di un giocatore."""
 
     first_name = StringField(
         "Nome",
@@ -91,20 +90,10 @@ class PlayerForm(FlaskForm):
         ],
     )
     
-    avatar = FileField(
-        "Aggiorna Avatar",
-        validators=[
-            Optional(),
-            FileAllowed(
-                ["jpg", "jpeg", "png"],
-                "Puoi caricare solo immagini (.jpg, .jpeg, .png)!"
-            ),
-        ],
-    )
-
-    # --- NUOVO CAMPO ---
-    delete_avatar = BooleanField("Rimuovi avatar attuale")
-    # -------------------
+    # --- MODIFICA: Campi avatar rimossi ---
+    # avatar = FileField(...)
+    # delete_avatar = BooleanField(...)
+    # --- FINE MODIFICA ---
 
     country = SelectField(
         "Paese",

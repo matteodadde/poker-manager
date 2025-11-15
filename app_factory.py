@@ -366,6 +366,25 @@ def create_app(is_testing: bool = False) -> Flask:
                     "Auth blueprint (auth_bp) not found. Skipping explicit registration."
                 )
 
+            # --- INIZIO MODIFICA: Registrazione API Blueprint ---
+            try:
+                from app.routes.api.avatar_routes import api_bp
+                
+                if "api" not in app.blueprints:
+                    app.register_blueprint(api_bp, url_prefix="/api/v1")
+                    app.logger.info(
+                        "API blueprint (api_bp) registered at URL prefix /api/v1."
+                    )
+                else:
+                    app.logger.debug(
+                        "API blueprint was already registered."
+                    )
+            except ImportError:
+                app.logger.error(
+                    "API blueprint (api_bp) not found in app.routes.api. Skipping registration."
+                )
+            # --- FINE MODIFICA ---
+
     except Exception as e:
         app.logger.critical(
             f"FATAL: Error during blueprint registration: {e}", exc_info=True
@@ -487,4 +506,3 @@ def log_url_map(app: Flask):
         app.logger.error(
             f"Could not generate or log URL map: {e}", exc_info=True
         )  # Log traceback on error
-

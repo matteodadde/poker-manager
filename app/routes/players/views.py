@@ -8,8 +8,8 @@ from functools import wraps
 import os
 import secrets
 from pathlib import Path
-from PIL import Image
-from werkzeug.utils import secure_filename
+# from PIL import Image # Rimosso, non più usato qui
+# from werkzeug.utils import secure_filename # Rimosso, non più usato qui
 from app import db
 from app.models import Player, Tournament, TournamentPlayer, Role
 from app.utils.decorators import admin_required
@@ -17,59 +17,10 @@ from . import players_bp as bp
 from .forms import PlayerForm, DeletePlayerForm
 from .utils import get_player_stats, country_code_to_emoji
 
-
-def _save_avatar(form_picture_data, player_id: int) -> str:
-    """
-    Salva, ridimensiona e ottimizza l'immagine avatar caricata in DUE formati:
-    1. Un thumbnail (es. '12.png') per le viste elenco.
-    2. Una versione full-size (es. '12_full.png') per lo zoom.
-
-    Args:
-        form_picture_data: Il dato del file dal form (es. form.avatar.data).
-        player_id (int): L'ID del giocatore, usato come nome file base.
-
-    Returns:
-        str: Il nome del file thumbnail salvato (es. '12.png').
-        
-    Raises:
-        IOError: Se si verifica un errore during il salvataggio o 
-                 il ridimensionamento dell'immagine.
-    """
-    THUMB_SIZE = (128, 128)
-    FULL_SIZE = (800, 800)
-    
-    base_filename = str(player_id)
-    thumb_fn = f"{base_filename}.png"
-    full_fn = f"{base_filename}_full.png"
-    
-    static_dir = Path(current_app.static_folder)
-    save_dir = static_dir / "images" / "players"
-    save_dir.mkdir(parents=True, exist_ok=True)
-    
-    thumb_path = save_dir / thumb_fn
-    full_path = save_dir / full_fn
-
-    try:
-        img = Image.open(form_picture_data)
-
-        img_full = img.copy()
-        img_full.thumbnail(FULL_SIZE)
-        img_full.convert('RGBA').save(full_path, format='PNG', optimize=True)
-
-        img_thumb = img.copy()
-        img_thumb.thumbnail(THUMB_SIZE)
-        img_thumb.convert('RGBA').save(thumb_path, format='PNG', optimize=True)
-        
-    except (IOError, OSError) as e:
-        current_app.logger.error(
-            f"Errore during salvataggio/ridimensionamento avatar per player ID {player_id}: {e}", 
-            exc_info=True
-        )
-
-        raise IOError(f"Errore during l'elaborazione dell'immagine: {e}")
-
-
-    return thumb_fn
+# --- MODIFICA: Funzione _save_avatar RIMOSSA ---
+# La logica è ora in app/utils/avatar_processor.py
+# def _save_avatar(...)
+# --- FINE MODIFICA ---
 
 
 # --- ROTTE ---
@@ -101,7 +52,7 @@ def list():
 @login_required
 @admin_required
 def add_player():
-    """Aggiunge un nuovo giocatore (solo admin)."""
+    """Aggiunge un nuovo giocatore (solo admin). L'avatar va caricato DOPO."""
     form = PlayerForm(original_nickname=None, original_email=None)
 
     if form.validate_on_submit():
@@ -130,29 +81,25 @@ def add_player():
                 )
 
             db.session.add(new_player)
-            db.session.commit() 
+            db.session.commit() # Commit per ottenere il new_player.id
 
 
-            if form.avatar.data:
-                try:
-                    _save_avatar(form.avatar.data, new_player.id)
-                    flash("Avatar caricato con successo!", "info")
-                except Exception as e:
-                    current_app.logger.error(
-                        f"Giocatore creato (ID {new_player.id}) ma caricamento avatar fallito: {e}"
-                    )
-                    flash(
-                        "Giocatore creato, ma si è verificato un errore during il caricamento dell'avatar.",
-                        "warning",
-                    )
+            # --- MODIFICA: Logica avatar rimossa ---
+            # if form.avatar.data:
+            #   ...
+            # --- FINE MODIFICA ---
 
             flash(
-                f"Giocatore '{new_player.nickname}' aggiunto con successo!", "success"
+                f"Giocatore '{new_player.nickname}' aggiunto! Ora puoi modificarlo per aggiungere un avatar.", "success"
             )
             current_app.logger.info(
                 f"Nuovo giocatore aggiunto da admin {current_user.nickname} (ID: {new_player.id}, Nick: {new_player.nickname})."
             )
-            return redirect(url_for("players.list"))
+            
+            # --- MODIFICA: Redirect alla pagina di MODIFICA ---
+            # L'utente può ora caricare l'avatar dalla pagina di modifica
+            return redirect(url_for("players.edit_player", player_id=new_player.id))
+            # --- FINE MODIFICA ---
         
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -183,8 +130,8 @@ def add_player():
 # @admin_required 
 def edit_player(player_id: int):
     """
-    Modifica un giocatore.
-    Accessibile a: Admin (su tutti) O l'utente stesso (solo sul proprio profilo).
+    Modifica i dati anagrafici di un giocatore.
+    L'avatar è gestito separatamente via API.
     """
     
     # Controlla se l'utente ha un attributo 'is_admin' o un ruolo 'admin'
@@ -229,39 +176,13 @@ def edit_player(player_id: int):
                 player.password = form.password.data
                 flash("Password aggiornata.", "info")
 
-            # --- LOGICA RIMOZIONE AVATAR ---
-            if form.delete_avatar.data:
-                try:
-                    base_path = Path(current_app.static_folder) / "images" / "players"
-                    thumb_path = base_path / f"{player.id}.png"
-                    full_path = base_path / f"{player.id}_full.png"
-                    
-                    if thumb_path.exists():
-                        thumb_path.unlink()
-                        current_app.logger.info(f"Avatar thumbnail {player.id}.png eliminato.")
-                    
-                    if full_path.exists():
-                        full_path.unlink()
-                        current_app.logger.info(f"Avatar full {player.id}_full.png eliminato.")
-                        
-                    flash("Avatar rimosso con successo.", "info")
-                except (IOError, OSError) as e:
-                    current_app.logger.error(f"Errore rimozione avatar per player ID {player.id}: {e}", exc_info=True)
-                    flash("Si è verificato un errore during la rimozione dell'avatar.", "warning")
-            # --- FINE LOGICA RIMOZIONE AVATAR ---
-
-            elif form.avatar.data:
-                try:
-                    _save_avatar(form.avatar.data, player.id)
-                    flash("Avatar aggiornato con successo!", "info")
-                except Exception as e:
-                    current_app.logger.error(
-                        f"Giocatore aggiornato (ID {player.id}) ma caricamento avatar fallito: {e}"
-                    )
-                    flash(
-                        "Dati aggiornati, ma si è verificato un errore during il caricamento dell'avatar.",
-                        "warning",
-                    )
+            # --- MODIFICA: Tutta la logica di form.delete_avatar ---
+            # --- e form.avatar.data è stata RIMOSSA ---
+            # if form.delete_avatar.data:
+            #   ...
+            # elif form.avatar.data:
+            #   ...
+            # --- FINE MODIFICA ---
 
             db.session.commit()
             
@@ -275,7 +196,9 @@ def edit_player(player_id: int):
             current_app.logger.info(
                 f"Giocatore aggiornato da {current_user.nickname} (ID: {player.id}, Nick: {player.nickname})."
             )
-            return redirect(url_for("players.detail", player_id=player.id))
+            # --- MODIFICA: Redirect alla stessa pagina ---
+            return redirect(url_for("players.edit_player", player_id=player.id))
+            # --- FINE MODIFICA ---
 
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -341,21 +264,15 @@ def delete_player(player_id: int):
                 )
                 return redirect(url_for("players.detail", player_id=player_id))
             
-            try:
-                base_path = Path(current_app.static_folder) / "images" / "players"
-                thumb_path = base_path / f"{player.id}.png"
-                full_path = base_path / f"{player.id}_full.png"
-                
-                if thumb_path.is_file():
-                    thumb_path.unlink()
-                    current_app.logger.info(f"Avatar thumbnail {player.id}.png eliminato.")
-                
-                if full_path.is_file():
-                    full_path.unlink()
-                    current_app.logger.info(f"Avatar full {player.id}_full.png eliminato.")
-                    
-            except Exception as e:
-                current_app.logger.error(f"Errore eliminazione avatar per player ID {player.id}: {e}")
+            # --- MODIFICA: Logica eliminazione avatar rimossa ---
+            # L'API (o un'altra logica centralizzata) dovrebbe
+            # gestire l'eliminazione dei file orfani,
+            # o l'endpoint DELETE dell'API dovrebbe essere chiamato prima.
+            # try:
+            #    ... (rimozione file) ...
+            # except Exception as e:
+            #    ...
+            # --- FINE MODIFICA ---
 
             db.session.delete(player)
             db.session.commit()

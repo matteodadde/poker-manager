@@ -115,3 +115,12 @@ class Config:
 
     # Accesso comodo alla root del progetto
     BASE_DIR = BASE_DIR
+
+# --- Configurazione Avatar ---
+    AVATAR_SAVE_PATH = BASE_DIR / "app" / "static" / "images" / "players"
+    AVATAR_PUBLIC_URL = "/static/images/players/"
+    AVATAR_FINAL_SIZE = 256 
+    AVATAR_FULL_SIZE = 800  # <-- AGGIUNGI QUESTA RIGA
+    AVATAR_MAX_ORIGINAL_DIMENSION = 3000
+    AVATAR_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
+    # ---------------------------
