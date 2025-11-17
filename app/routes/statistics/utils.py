@@ -149,3 +149,14 @@ def get_leaderboard_stats():
     # Filtra i giocatori che non hanno mai giocato
     leaderboard = [row for row in leaderboard if row.num_tournaments > 0]
     return leaderboard
+
+def get_total_prize_pool_sum():
+    """
+    Calcola la somma totale di tutti i montepremi (prize_pool) 
+    di tutti i tornei registrati nel database.
+    """
+    # Esegue una query di aggregazione SUM sulla colonna prize_pool
+    total = db.session.query(func.sum(Tournament.prize_pool)).scalar()
+    
+    # Se non ci sono tornei, total sarà None. Ritorniamo 0 in quel caso.
+    return total if total is not None else 0
