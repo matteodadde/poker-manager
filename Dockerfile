@@ -1,4 +1,4 @@
-# Dockerfile per Poker Manager (Revisionato)
+# Dockerfile per Poker Manager (Revisionato e Corretto)
 
 # --- STAGE 1: "Builder" ---
 # Questo stage installa strumenti pesanti (build-essential)
@@ -10,7 +10,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Installa solo le dipendenze di build
-# Aggiungiamo 'apt-get clean' per pulire anche la cache dei pacchetti
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
@@ -25,14 +24,12 @@ WORKDIR /app
 COPY requirements.txt setup.cfg ./
 
 # Installa le dipendenze
-# Le librerie compilate verranno salvate qui
 RUN pip install --upgrade pip \
     && pip install -r requirements.txt \
     && rm -rf /root/.cache/pip
 
 # --- STAGE 2: "Final" ---
 # Questa è l'immagine finale, super-leggera.
-# Non conterrà build-essential.
 FROM python:3.11-slim
 
 # Imposta le stesse variabili d'ambiente
@@ -40,8 +37,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Installa solo le dipendenze di *runtime*
-# 'libpq5' è la libreria di runtime per Postgres (molto più leggera di libpq-dev)
-# 'sqlite3' lo rimuoviamo, dato che è per lo sviluppo (vedi sotto)
 RUN apt-get update && apt-get install -y \
     libpq5 \
     curl \
@@ -54,19 +49,28 @@ WORKDIR /app
 # Crea l'utente non-root
 RUN useradd --system --create-home pokeruser
 
-# Ensure instance folder exists and is writable
-RUN mkdir -p /app/instance \
-    && chown -R pokeruser:pokeruser /app
+# Crea le cartelle necessarie come root
+RUN mkdir -p /app/instance
 
-USER pokeruser
-
-# 1. Copia le librerie (già presente)
+# Copia le librerie python (dal builder)
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 
-# 2. AGGIUNGI QUESTA RIGA: Copia gli eseguibili (flask, gunicorn, ecc.)
+# Copia gli eseguibili python (gunicorn, flask, ecc. dal builder)
 COPY --from=builder /usr/local/bin /usr/local/bin
-# Questo sostituisce il 'RUN chown...'
-COPY --chown=pokeruser:pokeruser . .
+
+# Copia l'applicazione (ancora come root)
+COPY . .
+
+# --- CORREZIONE PERMESSI (CRITICA) ---
+# Assegna i permessi di esecuzione agli script PRIMA di cambiare utente.
+# Questo risolve l'errore "permission denied" causato da Windows/Git.
+RUN chmod +x /app/scripts/*.sh
+
+# Assegna la proprietà di tutto all'utente non-root
+RUN chown -R pokeruser:pokeruser /app
+
+# Ora passa all'utente non-root
+USER pokeruser
 
 # Espone la porta
 EXPOSE 5000
@@ -74,6 +78,10 @@ EXPOSE 5000
 # Variabili d'ambiente per la produzione
 ENV FLASK_ENV=production
 
-# Comando per avviare l'app
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "wsgi:app"]
+# --- CORREZIONE AVVIO (CRITICA) ---
+# Esegui l'entrypoint script che si occupa di migrazioni e avvio
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 
+# Il CMD viene passato come argomento ($@) all'entrypoint.
+# entrypoint.sh eseguirà questo DOPO le migrazioni.
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "wsgi:app"]
