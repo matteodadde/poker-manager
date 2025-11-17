@@ -1,0 +1,286 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Dettagli Giocatore: {{ player.nickname }} | Poker Manager{% endblock %}
+
+{% block content %}
+<div class="container--narrow py-4">
+
+  <div class="mb-4">
+    <a href="{{ url_for('players.list') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+      <i class="bi bi-arrow-left"></i> Torna all'Elenco
+    </a>
+  </div>
+
+{# 
+  MODIFICHE APPLICATE:
+  1. Main Div: Cambiato 'd-flex' in 'd-md-flex' -> diventa flex (riga) solo da schermi medi in su.
+  2. Main Div: Aggiunto 'text-center text-md-start' -> su mobile (xs, sm) centra tutto, su desktop (md+) allinea a sinistra.
+  3. Avatar <a>: Aggiunto 'me-md-3' per dare spazio a destra all'avatar SOLO su desktop.
+  4. Buttons Div: Cambiato 'ms-auto' in 'ms-md-auto' -> spinge a destra SOLO su desktop.
+  5. Buttons Div: Aggiunto 'mt-3 mt-md-0' -> aggiunge spazio SOPRA i bottoni SOLO su mobile.
+  6. Buttons Div: Aggiunto 'justify-content-center justify-content-md-start' -> Centra i bottoni su mobile.
+#}
+
+<div class="d-md-flex align-items-center text-center text-md-start mb-4 fade-in">
+
+  <a href="#" 
+     data-bs-toggle="modal" 
+     data-bs-target="#avatarModal" 
+     title="Clicca per ingrandire l'avatar"
+     class="d-inline-block d-md-block me-md-3"> {# <-- MODIFICA QUI #}
+    <img src="{{ player.avatar_url }}" 
+         alt="Avatar {{ player.nickname }}" 
+         class="player-avatar"
+         style="cursor: pointer;">
+  </a>
+  
+  <div>
+    <h1 class="h3 mb-0">
+      {{ stats.country_emoji | safe }} {{ player.nickname }}
+    </h1>
+    <p class="text-muted mb-0">
+      {{ player.first_name or '' }} {{ player.last_name or '' }}
+    </p>
+    <small class="text-muted">{{ player.email }}</small>
+  </div>
+  
+  <div class="ms-md-auto d-flex gap-2 mt-3 mt-md-0 justify-content-center justify-content-md-start"> {# <-- MODIFICA QUI #}
+    
+    {% set is_admin = current_user.is_admin or current_user.has_role('admin') %}
+    {% if is_admin or current_user.id == player.id %}
+      <a href="{{ url_for('players.edit_player', player_id=player.id) }}"
+         class="btn btn-outline-primary d-inline-flex align-items-center gap-1"
+         aria-label="Modifica {{ player.nickname }}">
+        <i class="bi bi-pencil-fill"></i> 
+        {% if current_user.id == player.id %}Modifica Profilo{% else %}Modifica{% endif %}
+      </a>
+    {% endif %}
+
+    {% if is_admin %}
+      <button type="button" 
+              class="btn btn-outline-danger d-inline-flex align-items-center gap-1" 
+              data-bs-toggle="modal" 
+              data-bs-target="#deletePlayerModal"
+              data-player-id="{{ player.id }}"
+              data-player-nickname="{{ player.nickname }}"
+              aria-label="Elimina {{ player.nickname }}">
+        <i class="bi bi-trash3-fill"></i> Elimina
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+  <div class="card shadow-sm mb-4 fade-in" style="animation-delay: 0.1s;">
+    <div class="card-header bg-dark text-white">
+      <h2 class="h5 mb-0"><i class="bi bi-bar-chart-line-fill me-2"></i> Statistiche</h2>
+    </div>
+    <div class="card-body">
+      
+      {% set stat_definitions = [
+          ('net_profit', 'Profitto Netto', 'money', 'money'),
+          ('roi', 'ROI', 'percent', 'money'),
+          ('total_winnings', 'Vincite Totali', 'money', 'money'),
+          ('total_spent', 'Spesa Totale', 'money', 'cost'),
+          ('total_buyin_spent', 'Spesa Buy-in', 'money', 'cost'),
+          ('total_rebuy_spent', 'Spesa Rebuy', 'money', 'cost'),
+          ('avg_profit_per_tournament', 'Profitto Medio/T.', 'money', 'money'),
+          ('avg_prize_when_paid', 'Premio Medio (ITM)', 'money', 'money'),
+          ('num_tournaments', 'Tornei Giocati', 'int', 'neutral'),
+          ('num_wins', 'Vittorie', 'int', 'neutral'),
+          ('in_the_money', 'ITM (In The Money)', 'int', 'neutral'),
+          ('num_rebuy', 'Rebuy Totali', 'int', 'neutral'),
+          ('num_zero_rebuy_tournaments', 'Tornei senza Rebuy', 'int', 'neutral'),
+          ('abi', 'ABI (Buy-In Medio)', 'money', 'cost'),
+          ('cpc', 'CPC (Costo per Cash)', 'money', 'cost'),
+          ('win_rate', 'Win Rate', 'percent', 'neutral'),
+          ('itm_rate', 'ITM Rate', 'percent', 'neutral'),
+          ('win_to_itm_ratio', 'Rapporto Win/ITM', 'float2', 'neutral'),
+          ('avg_rebuy_per_tournament', 'Media Rebuy/Torneo', 'float2', 'neutral'),
+          ('rebuy_tournaments', 'Tornei con Rebuy', 'int', 'neutral'),
+          ('rebuy_frequency', 'Frequenza Rebuy', 'percent', 'neutral')
+      ] %}
+
+      <div class="player-stats-grid">
+        
+        {% for key, label, format_type, color_type in stat_definitions %}
+          {% set value = stats.get(key) %}
+          
+          {% set color_class = 'text-body' %} 
+          
+          {% if color_type == 'money' %}
+            {% if (value or 0) > 0 %}
+              {% set color_class = 'text-success' %}
+            {% elif (value or 0) < 0 %}
+              {% set color_class = 'text-danger' %}
+            {% endif %}
+          
+          {% elif color_type == 'cost' %}
+            {% if (value or 0) < 0 %}
+              {% set color_class = 'text-danger' %}
+            {% endif %}
+          {% endif %}
+
+          {% set formatted_value = '' %}
+          {% if format_type == 'money' %}
+            {% set formatted_value = ("%.2f"|format(value or 0)) + " €" %}
+          {% elif format_type == 'percent' %}
+            {% set formatted_value = ("%.1f"|format(value or 0)) + "%" %}
+          {% elif format_type == 'float2' %}
+            {% set formatted_value = "%.2f"|format(value or 0) %}
+          {% elif format_type == 'int' %}
+            {% set formatted_value = value | int or 0 %}
+          {% endif %}
+
+          <div class="player-stats-item">
+            <strong>{{ label }}</strong>
+            <span class="{{ color_class }}">
+              {{ formatted_value }}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4 fade-in" style="animation-delay: 0.2s;">
+    <div class="card-header bg-dark text-white">
+      <h2 class="h5 mb-0"><i class="bi bi-list-stars me-2"></i> Tornei Partecipati</h2>
+    </div>
+    <div class="card-body">
+      {% if tournaments_played %}
+        <div class="table-responsive">
+          <table id="tournamentsTable" class="table table-striped table-hover align-middle w-100">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col">📅 Data</th>
+                <th scope="col">🏆 Torneo</th>
+                <th scope="col">💰 Buy-in</th>
+                <th scope="col">🔄 Rebuy</th>
+                <th scope="col">📍 Posizione</th>
+                <th scope="col">💲 Vincita</th>
+                <th scope="col" class="text-center">⚙️ Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tp in tournaments_played %}
+              <tr>
+                <td data-order="{{ tp.tournament.tournament_date.strftime('%Y%m%d') }}">
+                  {{ tp.tournament.tournament_date.strftime('%d/%m/%Y') }}
+                </td>
+                <td>
+                  <a href="{{ url_for('tournaments.detail', tournament_id=tp.tournament.id) }}" class="fw-medium">
+                    {{ tp.tournament.name }}
+                  </a>
+                </td>
+                <td>{{ "%.2f"|format(tp.tournament.buy_in) }} €</td>
+                <td>{{ tp.rebuy or 0 }}</td>
+                <td>{{ tp.posizione or '-' }}</td>
+                <td class="{{ 'text-success' if (tp.prize or 0) > 0 else ('text-danger' if (tp.prize or 0) < 0 else '') }}">
+                  {{ "%.2f"|format(tp.prize or 0) }} €
+                </td>
+                <td class="text-center">
+                  <a href="{{ url_for('tournaments.detail', tournament_id=tp.tournament.id) }}"
+                     class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+                     aria-label="Vedi dettagli torneo {{ tp.tournament.name }}">
+                    <i class="bi bi-eye-fill"></i> Info
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted text-center my-3">
+          <i class="bi bi-info-circle me-2"></i> Nessun torneo partecipato da questo giocatore.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- MODAL PER ELIMINARE IL GIOCATORE (Visibile solo ad Admin) -->
+  {% set is_admin = current_user.is_admin or current_user.has_role('admin') %}
+  {% if is_admin %}
+  <div class="modal fade" id="deletePlayerModal" tabindex="-1" aria-labelledby="deletePlayerModalLabel" aria-hidden="true">
+     <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="deletePlayerModalLabel">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Conferma Eliminazione
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+          Sei sicuro di voler eliminare il giocatore <strong id="modalPlayerNickname">{{ player.nickname }}</strong>?
+          <br>
+          <small class="text-muted">Questa azione non può essere annullata.</small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+          <form id="deletePlayerForm" method="POST" action="{{ url_for('players.delete_player', player_id=player.id) }}" class="delete-player-form d-inline">
+             {{ delete_form.csrf_token }} <button type="submit" class="btn btn-danger">
+               <i class="bi bi-trash3-fill"></i> Elimina Giocatore
+             </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- MODAL PER ZOOM AVATAR -->
+  <div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="avatarModalLabel">Avatar: {{ player.nickname }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img src="{{ player.avatar_url_full }}" 
+               class="img-fluid rounded" 
+               alt="Avatar {{ player.nickname }} (Ingrandito)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+<script defer>
+  $(document).ready(function () {
+    // Inizializza DataTables per la tabella dei tornei
+    $('#tournamentsTable').DataTable({
+      language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/it-IT.json' },
+      pageLength: 5, // Meno righe per pagina nel dettaglio
+      order: [[0, 'desc']], // Ordina per Data (più recente prima)
+      columnDefs: [{ orderable: false, targets: [6] }], 
+      responsive: true,
+       "drawCallback": function( settings ) {
+        $('#tournamentsTable tbody tr').addClass('fade-in'); 
+      }
+    });
+
+    // --- Gestione Modal Eliminazione ---
+    const deleteModal = document.getElementById('deletePlayerModal');
+    if (deleteModal) {
+      const modalPlayerNickname = document.getElementById('modalPlayerNickname');
+      
+      deleteModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget; 
+        if (button) {
+            const playerNickname = button.getAttribute('data-player-nickname');
+            if (playerNickname) {
+                 modalPlayerNickname.textContent = playerNickname;
+            }
+        } 
+      });
+    }
+
+  });
+</script>
+{% endblock %}

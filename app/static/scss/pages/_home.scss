@@ -1,0 +1,32 @@
+// app/static/scss/pages/_home.scss
+@use '../base/variables' as *;
+
+/*
+ * Stili specifici per la home page.
+ * Assumendo che il contenuto sia dentro un <div class="container--narrow">
+ */
+.home-page {
+  
+  h1 {
+    text-align: center;
+    color: var(--colore-brand); // Usa il blu primario
+    margin-bottom: var(--sp-5); // 32px
+  }
+  
+  /* * Il form nella home page usa lo stile .card
+   * Aggiungi <form class="card"> nel tuo HTML 
+   */
+  .card {
+    // Stili specifici solo per il form nella home
+    
+    // Esempio: Rendi l'ombra più pronunciata
+    box-shadow: var(--ombra-lg);
+    
+    // Esempio: Aggiungi un bottone a larghezza piena
+    .btn {
+      width: 100%;
+      margin-top: var(--sp-4); // 24px
+      padding: var(--sp-3); // 16px
+    }
+  }
+}

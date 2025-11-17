@@ -1,0 +1,30 @@
+// app/static/scss/layout/_layout.scss
+// Contenitori di layout
+@use '../base/mixins' as m;
+
+/*
+ * Contenitore largo standard.
+ * Usalo per pagine a larghezza piena come la Leaderboard.
+ */
+.container {
+  @include m.container;
+}
+
+/*
+ * Contenitore stretto.
+ * Usalo per form (login, aggiungi torneo) e pagine di testo.
+ */
+.container--narrow {
+  @include m.container-narrow;
+}
+
+/*
+ * Contenuto principale
+ * Usalo nel tuo base.html per avvolgere il { block content }
+ */
+.main-content {
+  // Imposta un contenitore di default, ma può essere sovrascritto
+  @include m.container-narrow;
+  padding-top: var(--sp-5);
+  padding-bottom: var(--sp-6);
+}

@@ -1,0 +1,29 @@
+// app/static/scss/components/_grafico.scss
+@use '../base/variables' as *;
+
+/*
+ * Usa la classe .chart-canvas per il tuo <canvas>
+ */
+.chart-canvas {
+  max-width: 100%;
+  width: 100% !important; // Sovrascrive stili inline di chart.js
+  height: 300px !important; // Altezza fissa
+  
+  margin-top: var(--sp-4); // 24px
+  border-radius: var(--radius-md); // 8px
+  
+  /* Usa il colore della superficie (bianco o grigio scuro) */
+  background-color: var(--colore-superficie);
+  
+  /* Ombra leggera */
+  box-shadow: var(--ombra-sm);
+  
+  /* Rimuove sfocatura */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+// Il supporto dark mode è ora automatico grazie a 
+// var(--colore-superficie)

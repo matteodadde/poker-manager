@@ -1,0 +1,104 @@
+﻿###############################################
+# 🐍  PYTHON / FLASK
+###############################################
+
+# Bytecode e cache
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.pyo
+
+# Build e distribuzione
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Instance folder Flask (se la usi)
+instance/
+*.db
+*.sqlite3
+
+
+###############################################
+# 🧪 TEST & COVERAGE
+###############################################
+
+.benchmarks/
+.coverage
+coverage.xml
+htmlcov/
+pytestdebug.log
+.pytest_cache/
+
+
+###############################################
+# 🌐 FRONTEND / NODE
+###############################################
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.map
+*.lock
+
+
+###############################################
+# 🐳 DOCKER
+###############################################
+
+docker-compose.override.yml
+docker-compose.dev.yml
+docker.env
+.dockerignore
+
+
+###############################################
+# 🔐 CONFIGURAZIONE & SEGRETI
+###############################################
+
+# ENV files
+.env
+.env.*
+!.env.example
+private_data.json
+tournaments.json
+
+# Config specifiche locali
+*.local
+*.secret
+*.backup
+*_local.py
+
+
+###############################################
+# 🔧 IDE / EDITOR
+###############################################
+
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+
+###############################################
+# 🖼️ File di sistema
+###############################################
+
+.DS_Store
+Thumbs.db
+
+
+###############################################
+# 🔄 Backup / output non necessari
+###############################################
+
+*.bak
+*.old
+*.tmp

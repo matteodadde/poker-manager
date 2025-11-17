@@ -1,0 +1,270 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}📈 Leaderboard | Poker Manager{% endblock %}
+
+{% block content %}
+<style>
+  .leaderboard-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    border: 2px solid #eee; 
+  }
+  .stat-legend {
+    background-color: #f8f9fa;
+    border-left: 4px solid #ced4da; /* Colore grigio più leggero */
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 0.875rem; /* Testo più piccolo (come .small di Bootstrap) */
+    color: #6c757d; /* Colore "text-muted" di Bootstrap */
+    min-height: 58px; /* MODIFICATO: Altezza minima, può crescere */
+    display: flex;
+    align-items: center;
+  }
+</style>
+
+<div class="container py-4">
+  
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <h1 class="h3 m-0">📈 Classifica Leaderboard</h1>
+    </div>
+  <div class="card shadow-sm fade-in">
+    <div class="card-body">
+
+      {% if stats %}
+        <div class="row mb-4 align-items-center">
+          <div class="col-md-5 col-lg-4">
+            <div class="form-floating">
+              <select class="form-select" id="statSelector" aria-label="Scegli la statistica per la classifica">
+                <option value="net_profit" selected>📊 Profitto Netto</option>
+                <option value="avg_profit_per_tournament">💹 Profitto Medio/T.</option>
+                <option value="roi">📈 ROI</option>
+                <option value="total_winnings">🏆 Vincite Totali</option>
+                <option value="num_tournaments">🎲 Tornei Giocati</option>
+                <option value="num_wins">🥇 Vittorie</option>
+                <option value="win_rate">📈 Win Rate</option>
+                <option value="in_the_money">💰 ITM (In The Money)</option>
+                <option value="itm_rate">📊 ITM Rate</option>
+                <option value="total_spent">💸 Spese Totali</option>
+                <option value="total_buyin_spent">💰 Spese Buy-in</option>
+                <option value="total_rebuy_spent">💰 Spese Rebuy</option>
+                <option value="num_rebuy">🔄 Rebuy Totali</option>
+                <option value="avg_rebuy_per_tournament">🔄 Rebuy Medio/T.</option>
+                <option value="avg_prize_when_paid">🏆 Premio Medio (se ITM)</option>
+                <option value="win_to_itm_ratio">🎯 Ratio Vittorie/ITM</option>
+                <option value="num_zero_rebuy_tournaments">🚫 Tornei 0 Rebuy</option>
+                <option value="abi">🔥 ABI (Average Buy-In)</option> 
+                <option value="cpc">💸 CPC (Cost Per Cash)</option>
+                <option value="rebuy_tournaments">🔄 Tornei con Rebuy</option>
+                <option value="rebuy_frequency">📊 Frequenza Rebuy</option>
+              </select>
+              <label for="statSelector">Scegli la classifica</label>
+            </div>
+          </div>
+
+          <div class="col-md-7 col-lg-8 mt-2 mt-md-0">
+            <div class="stat-legend fade-in">
+              <i class="bi bi-info-circle-fill text-primary me-2"></i>
+              <span id="statDescription" class="fst-italic">Descrizione statistica...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle w-100">
+            <thead class="table-dark">
+              <tr>
+                <th scope="col" style="width: 5%;">#</th>
+                <th scope="col" style="width: 60%;">🎭 Giocatore</th>
+                <th scope="col" style="width: 35%;" id="statHeader">📊 Profitto Netto</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+              </tbody>
+          </table>
+        </div>
+
+      {% elif error_message %}
+        <div class="alert alert-danger text-center leaderboard-message" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error_message }}
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center leaderboard-message" role="alert">
+          <i class="bi bi-info-circle-fill me-2"></i> Nessun dato disponibile per la leaderboard. Gioca qualche torneo!
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+<script defer>
+$(document).ready(function() {
+  
+  {% if stats %}
+  
+    const currentUserId = {{ current_user.id | default('null') }};
+
+    // Dizionario delle descrizioni per la legenda
+    const statDescriptions = {
+      'net_profit': 'Vincite totali meno le Spese totali (Buy-in + Rebuy).',
+      'avg_profit_per_tournament': 'Profitto netto diviso il numero di tornei giocati.',
+      'roi': 'Return On Investment: Percentuale di ritorno sull\'investimento (Profitto Netto / Spese Totali * 100).',
+      'total_winnings': 'La somma lorda di tutti i premi vinti (senza sottrarre le spese).',
+      'num_tournaments': 'Il numero totale di tornei a cui il giocatore ha partecipato.',
+      'num_wins': 'Numero di tornei vinti (1° posto).',
+      'win_rate': 'Percentuale di vittorie (1° posto) rispetto ai tornei giocati.',
+      'in_the_money': 'In The Money: Numero di volte che il giocatore è andato a premio.',
+      'itm_rate': 'Percentuale di piazzamenti a premio rispetto ai tornei giocati.',
+      'total_spent': 'Somma totale di tutti i Buy-in e Rebuy pagati.',
+      'total_buyin_spent': 'Somma totale spesa solo per le iscrizioni iniziali (Buy-in).',
+      'total_rebuy_spent': 'Somma totale spesa solo per i rientri (Rebuy).',
+      'num_rebuy': 'Numero totale di Rebuy effettuati.',
+      'avg_rebuy_per_tournament': 'Media dei rebuy effettuati per ogni torneo giocato.',
+      'avg_prize_when_paid': 'Valore medio del premio incassato (calcolato solo sui tornei andati a premio).',
+      'win_to_itm_ratio': 'Capacità di chiudere: quante volte vinci quando sei già a premio (Vittorie / ITM).',
+      'abi': 'Average Buy-In: La media del costo di iscrizione (buy-in) per torneo.',
+      'cpc': 'Cost Per Cash: Quanto spendi in media per ottenere un piazzamento a premio (Spesa Totale / ITM).',
+      'rebuy_tournaments': 'Numero di tornei in cui è stato effettuato almeno un rebuy.',
+      'rebuy_frequency': 'Percentuale di tornei con uno o più rebuy sul totale degli eventi giocati.',
+      'num_zero_rebuy_tournaments': 'Numero di tornei completati pagando solo il buy-in iniziale (senza rebuy).'
+    };
+
+    const statsData = [
+      {% for stat in stats %}
+      {
+        "player_id": {{ stat.player_id }},
+        "nickname": "{{ stat.nickname | e }}",
+        "avatar_url": "{{ stat.avatar_url | default('', true) }}",
+        "net_profit": {{ stat.net_profit | default(0) }},
+        "roi": {{ stat.roi | default(0) }},
+        "num_tournaments": {{ stat.num_tournaments | default(0) }},
+        "num_wins": {{ stat.num_wins | default(0) }},
+        "in_the_money": {{ stat.in_the_money | default(0) }},
+        "win_rate": {{ stat.win_rate | default(0) }},
+        "itm_rate": {{ stat.itm_rate | default(0) }},
+        "total_winnings": {{ stat.total_winnings | default(0) }},
+        "total_spent": {{ stat.total_spent | default(0) }},
+        "total_buyin_spent": {{ stat.total_buyin_spent | default(0) }},
+        "total_rebuy_spent": {{ stat.total_rebuy_spent | default(0) }},
+        "avg_profit_per_tournament": {{ stat.avg_profit_per_tournament | default(0) }},
+        "num_rebuy": {{ stat.num_rebuy | default(0) }},
+        "avg_rebuy_per_tournament": {{ stat.avg_rebuy_per_tournament | default(0) }},
+        "avg_prize_when_paid": {{ stat.avg_prize_when_paid | default(0) }},
+        "win_to_itm_ratio": {{ stat.win_to_itm_ratio | default(0) }},
+        "num_zero_rebuy_tournaments": {{ stat.num_zero_rebuy_tournaments | default(0) }},
+        "abi": {{ stat.abi | default(0) }},
+        "cpc": {{ stat.cpc | default(0) }},
+        "rebuy_tournaments": {{ stat.rebuy_tournaments | default(0) }},
+        "rebuy_frequency": {{ stat.rebuy_frequency | default(0) }},
+        "player_url": "{{ url_for('players.detail', player_id=stat.player_id) }}"
+      },
+      {% endfor %}
+    ];
+
+    const selector = $('#statSelector');
+    const tbody = $('#leaderboardBody');
+    const header = $('#statHeader');
+    const descriptionSpan = $('#statDescription'); // Riferimento alla legenda
+
+    const formatters = {
+      'net_profit': val => `${val.toFixed(2)} €`,
+      'avg_profit_per_tournament': val => `${val.toFixed(2)} €`,
+      'roi': val => `${val.toFixed(2)}%`,
+      'abi': val => `${val.toFixed(2)} €`,
+      'cpc': val => `${val.toFixed(2)} €`,
+      'total_winnings': val => `${val.toFixed(2)} €`,
+      'total_spent': val => `${val.toFixed(2)} €`,
+      'total_buyin_spent': val => `${val.toFixed(2)} €`,
+      'total_rebuy_spent': val => `${val.toFixed(2)} €`,
+      'avg_prize_when_paid': val => `${val.toFixed(2)} €`,
+      'win_rate': val => `${(val * 100).toFixed(2)}%`,
+      'itm_rate': val => `${(val * 100).toFixed(2)}%`,
+      'win_to_itm_ratio': val => `${(val * 100).toFixed(2)}%`,
+      'avg_rebuy_per_tournament': val => val.toFixed(2),
+      'num_tournaments': val => val,
+      'num_wins': val => val,
+      'in_the_money': val => val,
+      'num_rebuy': val => val,
+      'num_zero_rebuy_tournaments': val => val,
+      'rebuy_frequency': val => `${val.toFixed(2)}%`,
+      'rebuy_tournaments': val => val
+
+    };
+
+    const getProfitStyle = (key, value) => {
+      if (key === 'net_profit' || key === 'avg_profit_per_tournament' || key === 'roi') {
+        if (value > 0) { return 'style="color: #198754;"'; }
+        else if (value < 0) { return 'style="color: #dc3545;"'; }
+      }
+      if (key === 'avg_prize_when_paid' && value > 0) {
+        return 'style="color: #198754;"';
+      }
+      return '';
+    };
+
+    function updateLeaderboard(statKey) {
+      if (!statKey) return;
+
+      const statName = selector.find('option:selected').text();
+      const formatter = formatters[statKey] || (val => val);
+
+      // 1. Aggiorna Legenda
+      const description = statDescriptions[statKey] || "Nessuna descrizione disponibile.";
+      descriptionSpan.text(description);
+
+      // 2. Ordina Dati
+      statsData.sort((a, b) => b[statKey] - a[statKey]);
+
+      // 3. Aggiorna Header Tabella
+      header.text(statName);
+      tbody.empty();
+
+      // 4. Genera Righe
+      statsData.forEach((player, index) => {
+        const rank = index + 1;
+        const value = player[statKey];
+        const formattedValue = formatter(value);
+        const valueStyle = getProfitStyle(statKey, value);
+        
+        const avatarHtml = `<img src="${player.avatar_url}" alt="${player.nickname}" class="leaderboard-avatar">`;
+        const isCurrentUser = (currentUserId !== null && player.player_id == currentUserId);
+        const rowClass = isCurrentUser ? 'table-primary border-primary fw-bold' : '';
+        const userLabel = isCurrentUser ? ' <span class="badge bg-primary ms-2">Tu</span>' : '';
+
+        const row = `
+          <tr class="fade-in ${rowClass}">
+            <td>${rank}</td>
+            <td>
+              <div class="d-flex align-items-center">
+                ${avatarHtml}
+                <a href="${player.player_url}" class="${isCurrentUser ? 'text-dark' : ''}">${player.nickname}</a>
+                ${userLabel}
+              </div>
+            </td>
+            <td class="fw-bold" ${valueStyle}>
+              ${formattedValue}
+            </td>
+          </tr>
+        `;
+        tbody.append(row);
+      });
+    }
+
+    selector.on('change', function() {
+      updateLeaderboard($(this).val());
+    });
+
+    // Inizializza
+    updateLeaderboard('net_profit');
+  
+  {% endif %}
+});
+</script>
+{% endblock %}

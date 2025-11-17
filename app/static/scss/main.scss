@@ -1,0 +1,100 @@
+/* app/static/scss/main.scss */
+
+// ----------------------------------------------------------
+// 1. Funzioni (devono essere lette per prime)
+// ----------------------------------------------------------
+@use 'base/functions';
+
+// ----------------------------------------------------------
+// 2. Variabili CUSTOM (Le nostre variabili CSS e Sass)
+// ----------------------------------------------------------
+@use 'base/variables' as *;
+
+// ----------------------------------------------------------
+// 3. Mappiamo le nostre variabili a quelle di Bootstrap
+// ----------------------------------------------------------
+$primary:       var(--colore-brand);
+$secondary:     hsl(var(--colore-testo-soft-hsl));
+$success:       var(--colore-accento);
+$danger:        var(--colore-elimina);
+$warning:       var(--colore-warning);
+
+$body-bg:       var(--colore-sfondo);
+$body-color:    var(--colore-testo);
+$border-color:  var(--colore-bordo);
+
+$card-bg:               var(--colore-superficie);
+$card-border-color:     var(--colore-bordo);
+$card-border-radius:    var(--radius-lg);
+$card-box-shadow:       var(--ombra-md);
+
+$form-label-color: var(--colore-testo-soft);
+
+$navbar-dark-color:       rgba(255, 255, 255, 0.85);
+$navbar-dark-hover-color: #FFFFFF;
+
+$footer-bg:    hsl(var(--colore-testo-hsl), 20%, 18%);
+$footer-color: hsl(var(--colore-testo-soft-hsl), 15%, 70%);
+
+// ----------------------------------------------------------
+// 4. IMPORTA BOOTSTRAP (usa le variabili definite sopra)
+// ----------------------------------------------------------
+// Assicurati di aver installato Bootstrap con:
+//    npm install bootstrap bootstrap-icons
+//
+// Sass cercherà automaticamente in node_modules
+@use "../../../node_modules/bootstrap/scss/bootstrap" as bs;
+
+
+// Importa le icone Bootstrap
+// ----------------------------------------------------------
+// 5. Mixins personalizzati
+// ----------------------------------------------------------
+@use 'base/mixins' as mixins;
+
+// ----------------------------------------------------------
+// 6. Reset (il nostro, minimo)
+// ----------------------------------------------------------
+@use 'base/reset';
+
+// ----------------------------------------------------------
+// 7. Stili di Base (body, h1, ecc.)
+// ----------------------------------------------------------
+@use 'base/base';
+
+// ----------------------------------------------------------
+// 8. Layout (container, griglie, ecc.)
+// ----------------------------------------------------------
+@use 'layout/layout';
+
+// ----------------------------------------------------------
+// 9. Stili specifici delle Pagine
+// ----------------------------------------------------------
+@use 'pages/home';
+@use 'pages/players';
+@use 'pages/tournaments';
+@use 'pages/leaderboard';
+
+// ----------------------------------------------------------
+// 10. Stili per le pagine di errore
+// ----------------------------------------------------------
+.error-page {
+  @include mixins.container-narrow;
+  text-align: center;
+  padding-top: var(--sp-6);
+  padding-bottom: var(--sp-6);
+
+  h1 {
+    color: var(--colore-brand);
+  }
+
+  p {
+    font-size: 1.125rem;
+    color: var(--colore-testo-soft);
+    margin-bottom: var(--sp-4);
+  }
+
+  .btn {
+    margin: 0 var(--sp-2);
+  }
+}

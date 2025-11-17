@@ -1,0 +1,674 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+  {% if player %}
+     {% if current_user.id == player.id %}Modifica Profilo{% else %}Modifica Giocatore{% endif %}
+  {% else %}
+     Aggiungi Giocatore
+  {% endif %} | Poker Manager
+{% endblock %}
+
+{% block content %}
+<div class="container--narrow py-4">
+
+  <div class="mb-4">
+    {% if player %}
+      <a href="{{ url_for('players.detail', player_id=player.id) }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Annulla
+      </a>
+    {% else %}
+      <a href="{{ url_for('players.list') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Torna all'Elenco
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="card shadow-sm fade-in">
+    <div class="card-header bg-dark text-white">
+      <h1 class="h4 mb-0 d-inline-flex align-items-center gap-2">
+        {% if player %}
+          {% if current_user.id == player.id %}
+            <i class="bi bi-person-circle"></i> Modifica il tuo Profilo
+          {% else %}
+            <i class="bi bi-pencil-square"></i> Modifica Giocatore: {{ player.nickname }}
+          {% endif %}
+        {% else %}
+          <i class="bi bi-person-plus-fill"></i> Aggiungi Nuovo Giocatore
+        {% endif %}
+      </h1>
+    </div>
+    <div class="card-body p-4 p-md-5">
+
+      {% set has_full_avatar = player and player.avatar_url_full and 'default-avatar' not in player.avatar_url_full %}
+      
+      <div class="text-center mb-4">
+        <div id="avatarContainer" class="position-relative d-inline-block">
+            
+          {% if has_full_avatar %}
+          <a href="#" 
+             data-bs-toggle="modal" 
+             data-bs-target="#avatarZoomModal" 
+             title="Clicca per ingrandire">
+          {% endif %}
+
+          <img src="{{ player.avatar_url if player and player.avatar_url else url_for('static', filename='images/default-avatar.png') }}"
+               alt="Avatar di {{ player.nickname if player else 'default' }}"
+               id="avatarPreviewMain"
+               class="rounded-circle"
+               style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #dee2e6;">
+
+          {% if has_full_avatar %}
+          </a>
+          {% endif %}
+
+          {% if player %}
+          <button type="button" id="avatarEditBtn" class="btn btn-primary rounded-circle p-0" title="Modifica avatar">
+              <i class="bi bi-camera-fill"></i>
+          </button>
+          {% endif %}
+
+          <div id="avatarSpinner" class="spinner-border text-primary" role="status" style="position: absolute; top: 0; left: 0; width: 150px; height: 150px; display: none; border-width: .25em;">
+              <span class="visually-hidden">Caricamento...</span>
+          </div>
+        </div>
+        
+        <div id="avatarApiAlerts" class="mt-3"></div>
+      </div>
+      {% if form.errors and not form.errors.items() %}
+        <div class="alert alert-danger" role="alert">
+          Si sono verificati errori nel form. Controlla i campi.
+        </div>
+      {% endif %}
+
+      <form method="POST"
+            action="{{ url_for('players.edit_player', player_id=player.id) if player else url_for('players.add_player') }}"
+            novalidate>
+
+        {{ form.csrf_token }}
+        {% set is_admin = current_user.is_admin or current_user.has_role('admin') %}
+
+        <div class="row g-3">
+          
+          <div class="col-md-6 form-group">
+            {{ form.first_name.label(class="form-label") }}
+            {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else ""), autocomplete="given-name") }}
+            {% if form.first_name.errors %}
+              <div class="invalid-feedback">{{ form.first_name.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.last_name.label(class="form-label") }}
+            {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else ""), autocomplete="family-name") }}
+            {% if form.last_name.errors %}
+              <div class="invalid-feedback">{{ form.last_name.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.nickname.label(class="form-label") }}
+            {{ form.nickname(
+                 class="form-control" + (" is-invalid" if form.nickname.errors else ""), 
+                 required=True, 
+                 autocomplete="nickname",
+                 disabled=(not is_admin and player)
+               ) 
+            }}
+            {% if form.nickname.errors %}
+              <div class="invalid-feedback">{{ form.nickname.errors[0] }}</div>
+            {% elif not is_admin and player %}
+              <small class="form-text text-muted">Solo un admin può modificare il nickname.</small>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), required=True, autocomplete="email") }}
+            {% if form.email.errors %}
+              <div class="invalid-feedback">{{ form.email.errors[0] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 form-group">
+            {{ form.country.label(class="form-label") }}
+            {{ form.country(class="form-control" + (" is-invalid" if form.country.errors else ""), autocomplete="country-name") }}
+            {% if form.country.errors %}
+              <div class="invalid-feedback">{{ form.country.errors[0] }}</div>
+            {% endif %}
+             <small class="form-text text-muted">Codice ISO a 2 lettere (es. IT, US).</small>
+          </div>
+          
+          <div class="col-12 mt-4">
+            <hr>
+          </div>
+
+          {% if player %}
+            <div class="col-12">
+              <p class="text-muted">
+                Compila i campi seguenti solo se vuoi cambiare la password. Lascia vuoto per non modificare.
+              </p>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.old_password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.old_password(class="form-control" + (" is-invalid" if form.old_password.errors else ""), autocomplete="current-password", id="old_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#old_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.old_password.errors %}
+                  <div class="invalid-feedback">{{ form.old_password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password", id="new_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#new_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.password.errors %}
+                  <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.confirm_password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password", id="confirm_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#confirm_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.confirm_password.errors %}
+                  <div class="invalid-feedback">{{ form.confirm_password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+          
+          {% else %}
+            <div class="col-12">
+              <p class="text-muted">
+                Imposta una password per il nuovo giocatore.
+              </p>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password", id="new_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#new_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.password.errors %}
+                  <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-md-6 form-group">
+              {{ form.confirm_password.label(class="form-label") }}
+              <div class="input-group has-validation">
+                {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password", id="confirm_password") }}
+                <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-bs-target="#confirm_password" title="Mostra/Nascondi password">
+                  <i class="bi bi-eye-fill"></i>
+                </button>
+                {% if form.confirm_password.errors %}
+                  <div class="invalid-feedback">{{ form.confirm_password.errors[0] }}</div>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+        </div> 
+        
+        <div class="mt-4 pt-3 border-top">
+          <button type="submit" class="btn btn-success d-inline-flex align-items-center gap-2">
+            {% if player %}
+              <i class="bi bi-check-lg"></i> Salva Modifiche
+            {% else %}
+              <i class="bi bi-check-lg"></i> Crea Giocatore
+            {% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="avatarModalLabel">Aggiorna Avatar</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="btn-toolbar justify-content-center gap-2 mb-3" role="toolbar">
+          <div class="btn-group" role="group">
+            <label for="avatarUploadInput" class="btn btn-primary">
+              <i class="bi bi-upload"></i> Carica File
+            </label>
+            <input type="file" id="avatarUploadInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
+          </div>
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-secondary" id="avatarWebcamBtn">
+              <i class="bi bi-camera-video"></i> Scatta Foto
+            </button>
+          </div>
+          {% if player and player.avatar_url and 'default-avatar' not in player.avatar_url %}
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-danger" id="avatarRemoveBtn">
+              <i class="bi bi-trash"></i> Rimuovi Foto
+            </button>
+          </div>
+          {% endif %}
+        </div>
+        
+        <div id="avatarModalAlerts" class="mb-2"></div>
+
+        <div id="webcamContainer" class="text-center" style="display: none;">
+          <video id="webcamVideo" style="width: 100%; height: auto; border-radius: 8px;" playsinline></video>
+          <button id="webcamSnapBtn" class="btn btn-success mt-2">Scatta</button>
+          <button id="webcamStopBtn" class="btn btn-danger mt-2">Ferma</button>
+        </div>
+        
+        <div id="cropContainer" style="display: none; max-height: 50vh;">
+          <img id="cropImage" style="max-width: 100%;">
+        </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="button" class="btn btn-success" id="avatarSaveCropBtn" style="display: none;">
+          <i class="bi bi-check-lg"></i> Applica e Salva
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if has_full_avatar %}
+<div class="modal fade" id="avatarZoomModal" tabindex="-1" aria-labelledby="avatarZoomModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background: transparent; border: 0;">
+      <div class="modal-body p-0 text-center" data-bs-dismiss="modal">
+        <img src="{{ player.avatar_url_full }}" 
+             class="img-fluid" 
+             style="max-height: 90vh; cursor: zoom-out;"
+             alt="Avatar ingrandito di {{ player.nickname }}">
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="avatarRemoveConfirmModal" tabindex="-1" aria-labelledby="avatarRemoveConfirmLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="avatarRemoveConfirmLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> Conferma Rimozione
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <div class="modal-body">
+        Sei sicuro di voler rimuovere il tuo avatar?
+        <br>
+        <small class="text-muted">Questa azione non può essere annullata.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="button" id="avatarConfirmDeleteBtn" class="btn btn-danger">
+          <i class="bi bi-trash3-fill"></i> Rimuovi Davvero
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+
+<style>
+  /* Contenitore avatar (deve corrispondere alle dimensioni dell'img) */
+  #avatarContainer {
+    width: 150px;
+    height: 150px;
+  }
+
+  /* Pulsante di modifica avatar */
+  #avatarEditBtn {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    /* Trucco per centrare sul bordo: */
+    /* Sposta a sx del 50% della SUA larghezza, e in basso del 50% della SUA altezza */
+    transform: translate(-50%, 50%); 
+    
+    width: 40px;  /* Dimensione icona */
+    height: 40px; /* Dimensione icona */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #fff; /* Bordo bianco per staccare */
+    font-size: 1.1rem; /* Dimensione icona interna */
+    z-index: 10;
+  }
+  
+  /* Cursore per lo zoom (solo se has_full_avatar è true) */
+  #avatarPreviewMain {
+    cursor: {% if has_full_avatar %}zoom-in{% else %}default{% endif %};
+  }
+
+  #webcamVideo {
+    transform: scaleX(-1); /* Specchia la webcam per un effetto "specchio" */
+  }
+</style>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleButtons = document.querySelectorAll('.password-toggle-btn');
+  toggleButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+      const targetInput = document.querySelector(this.dataset.bsTarget);
+      const icon = this.querySelector('i');
+      if (targetInput) {
+        if (targetInput.type === 'password') {
+          targetInput.type = 'text';
+          icon.classList.remove('bi-eye-fill');
+          icon.classList.add('bi-eye-slash-fill');
+        } else {
+          targetInput.type = 'password';
+          icon.classList.remove('bi-eye-slash-fill');
+          icon.classList.add('bi-eye-fill');
+        }
+      }
+    });
+  });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  
+  // === Riferimenti Elementi DOM ===
+  const avatarPreviewMain = document.getElementById('avatarPreviewMain');
+  const avatarSpinner = document.getElementById('avatarSpinner');
+  const avatarModal = new bootstrap.Modal(document.getElementById('avatarModal'));
+  const avatarEditBtn = document.getElementById('avatarEditBtn'); 
+  
+  // --- NUOVI RIFERIMENTI ---
+  const avatarRemoveConfirmModal = document.getElementById('avatarRemoveConfirmModal');
+  const avatarConfirmDeleteBtn = document.getElementById('avatarConfirmDeleteBtn');
+  let bsAvatarRemoveConfirmModal; // Istanza Bootstrap del modal
+  if (avatarRemoveConfirmModal) {
+    bsAvatarRemoveConfirmModal = new bootstrap.Modal(avatarRemoveConfirmModal);
+  }
+  // --- FINE NUOVI RIFERIMENTI ---
+  
+  const uploadInput = document.getElementById('avatarUploadInput');
+  const webcamBtn = document.getElementById('avatarWebcamBtn');
+  const removeBtn = document.getElementById('avatarRemoveBtn');
+  const cropContainer = document.getElementById('cropContainer');
+  const cropImage = document.getElementById('cropImage');
+  const saveCropBtn = document.getElementById('avatarSaveCropBtn');
+  const webcamContainer = document.getElementById('webcamContainer');
+  const webcamVideo = document.getElementById('webcamVideo');
+  const webcamSnapBtn = document.getElementById('webcamSnapBtn');
+  const webcamStopBtn = document.getElementById('webcamStopBtn');
+  
+  const defaultAvatarUrl = "{{ url_for('static', filename='images/default-avatar.png') }}";
+  const playerId = {{ player.id if player else 'null' }};
+  const csrfToken = "{{ form.csrf_token._value() }}"; 
+  
+  let cropper = null;
+  let webcamStream = null;
+  
+  // === Funzioni di Utility (Invariate) ===
+  
+  function showAlert(message, type = 'danger', containerId = 'avatarModalAlerts') {
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Chiudi"></button>
+      </div>`;
+    }
+  }
+
+  function hideAlert(containerId = 'avatarModalAlerts') {
+    const container = document.getElementById(containerId);
+    if (container) container.innerHTML = '';
+  }
+  
+  function showMainSpinner(show) {
+    if (show) {
+      avatarPreviewMain.style.display = 'none';
+      if (avatarEditBtn) avatarEditBtn.style.display = 'none'; // Nascondi anche l'icona
+      avatarSpinner.style.display = 'block';
+    } else {
+      avatarPreviewMain.style.display = 'block';
+      if (avatarEditBtn) avatarEditBtn.style.display = 'block'; // Mostra anche l'icona
+      avatarSpinner.style.display = 'none';
+    }
+  }
+
+  function stopWebcam() {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(track => track.stop());
+      webcamStream = null;
+    }
+    webcamContainer.style.display = 'none';
+    webcamVideo.srcObject = null;
+  }
+
+  function startWebcam() {
+    stopWebcam(); 
+    hideAlert();
+    if (cropper) cropper.destroy();
+    cropContainer.style.display = 'none';
+    saveCropBtn.style.display = 'none';
+    
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then(stream => {
+        webcamStream = stream;
+        webcamVideo.srcObject = stream;
+        webcamVideo.play();
+        webcamContainer.style.display = 'block';
+      })
+      .catch(err => {
+        console.error("Errore webcam:", err);
+        showAlert("Impossibile accedere alla webcam. Controlla i permessi.");
+      });
+  }
+  
+  function initCropper(source) {
+    stopWebcam();
+    hideAlert();
+    
+    if (cropper) {
+      cropper.replace(source);
+    } else {
+      cropImage.src = source;
+      cropper = new Cropper(cropImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.8,
+        background: false,
+        responsive: true,
+        guides: false,
+        center: false,
+        highlight: false,
+        cropBoxMovable: false,
+        cropBoxResizable: false,
+        toggleDragModeOnDblclick: false,
+      });
+    }
+    cropContainer.style.display = 'block';
+    saveCropBtn.style.display = 'block';
+  }
+
+  // === Gestione Eventi (Punti 1-6 Invariati) ===
+  
+  // 1. Clic sull'ICONA MODIFICA apre il modal di editing
+  if (avatarEditBtn) {
+    avatarEditBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Evita di far scattare lo zoom
+      avatarModal.show();
+    });
+  }
+  
+  // 2. Chiusura Modal: resetta tutto
+  document.getElementById('avatarModal').addEventListener('hidden.bs.modal', () => {
+    stopWebcam();
+    if (cropper) cropper.destroy();
+    cropper = null;
+    cropContainer.style.display = 'none';
+    saveCropBtn.style.display = 'none';
+    uploadInput.value = ''; // Resetta input file
+    hideAlert();
+  });
+
+  // 3. Selezione File
+  uploadInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        initCropper(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else if (file) {
+      showAlert("Seleziona un file immagine valido (jpg, png, webp).");
+    }
+  });
+
+  // 4. Avvio Webcam
+  webcamBtn.addEventListener('click', startWebcam);
+  
+  // 5. Stop Webcam
+  webcamStopBtn.addEventListener('click', stopWebcam);
+  
+  // 6. Scatto Foto (MODIFICATO per specchiare)
+    webcamSnapBtn.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = webcamVideo.videoWidth;
+      canvas.height = webcamVideo.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Sposta il contesto all'estrema destra e inverti l'asse X
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      
+      // Disegna l'immagine video, che ora sarà specchiata
+      ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
+      
+      initCropper(canvas.toDataURL('image/png'));
+    });
+
+  // 7. Salvataggio (Crop e Upload) (Invariato)
+  saveCropBtn.addEventListener('click', () => {
+    if (!cropper) return;
+    
+    cropper.getCroppedCanvas().toBlob((blob) => {
+      if (!blob) {
+        showAlert("Errore durante il ritaglio dell'immagine.");
+        return;
+      }
+      
+      avatarModal.hide();
+      showMainSpinner(true);
+      hideAlert('avatarApiAlerts');
+
+      const formData = new FormData();
+      formData.append('avatar', blob, 'avatar.png');
+
+      fetch(`/api/v1/players/${playerId}/avatar`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken':  csrfToken
+        },
+        body: formData,
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.url) {
+          // Ricarica la pagina per mostrare i nuovi link di zoom e il tasto "rimuovi"
+          location.reload(); 
+        } else {
+          showAlert(data.error || "Si è verificato un errore.", 'danger', 'avatarApiAlerts');
+        }
+      })
+      .catch(err => {
+        console.error("Errore Fetch:", err);
+        showAlert("Errore di connessione con il server.", 'danger', 'avatarApiAlerts');
+      })
+      .finally(() => {
+        showMainSpinner(false);
+      });
+      
+    }, 'image/png');
+  });
+  
+  // 8. Rimozione Avatar (MODIFICATO per usare un modal di conferma)
+  if (removeBtn && avatarConfirmDeleteBtn && bsAvatarRemoveConfirmModal) {
+      
+      // FASE 1: Il pulsante "Rimuovi Foto" nel modal di modifica
+      // ora apre il modal di CONFERMA.
+      removeBtn.addEventListener('click', () => {
+        // Nascondi il modal di editing
+        avatarModal.hide();
+        // Mostra il modal di conferma
+        bsAvatarRemoveConfirmModal.show();
+      });
+
+      // FASE 2: Il pulsante "Rimuovi Davvero" nel modal di conferma
+      // esegue l'azione fetch.
+      avatarConfirmDeleteBtn.addEventListener('click', () => {
+        // Nascondi il modal di conferma
+        bsAvatarRemoveConfirmModal.hide();
+        
+        showMainSpinner(true);
+        hideAlert('avatarApiAlerts');
+        
+        fetch(`/api/v1/players/${playerId}/avatar`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRFToken': csrfToken 
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            location.reload(); // Ricarica per mostrare l'avatar di default
+          } else {
+             showAlert(data.error || "Errore durante la rimozione.", 'danger', 'avatarApiAlerts');
+          }
+        })
+        .catch(err => {
+          console.error("Errore Fetch DELETE:", err);
+          showAlert("Errore di connessione con il server.", 'danger', 'avatarApiAlerts');
+        })
+        .finally(() => {
+          showMainSpinner(false);
+        });
+      });
+  }
+
+});
+</script>
+{% endblock %}

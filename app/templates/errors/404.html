@@ -1,0 +1,12 @@
+{% extends 'layouts/base.html' %}
+{% block title %}Pagina Non Trovata | Poker Manager{% endblock %}
+
+{% block content %}
+<section class="error-page" aria-labelledby="error-title" role="main">
+  <h1 id="error-title">Errore 404 - Pagina Non Trovata</h1>
+  <p>La pagina che stai cercando non esiste o è stata spostata.</p>
+  <p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary" role="button">Torna alla Homepage</a>
+  </p>
+</section>
+{% endblock %}

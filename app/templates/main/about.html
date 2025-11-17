@@ -1,0 +1,63 @@
+{% extends 'layouts/base.html' %}
+{% block title %}ℹ️ About | Poker Manager{% endblock %}
+
+{% block content %}
+<div class="container-lg my-5">
+  
+  <section class="p-4 p-md-5 bg-body-tertiary rounded-3 shadow-sm" role="region" aria-label="Informazioni su Poker Manager">
+    
+    <div class="row justify-content-center">
+      <div class="col-lg-10 col-xl-8">
+        {# L'H1 è ben fatto, lo manteniamo com'è #}
+        <h1 class="text-center fw-bold mb-4 d-flex align-items-center justify-content-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor"
+               class="bi bi-suit-spade text-primary" viewBox="0 0 16 16" aria-hidden="true">
+          </svg>
+          Informazioni su Poker Manager
+        </h1>
+
+
+        <h2 class="h4 fw-semibold border-bottom pb-2 mb-3 mt-4">
+          La nostra missione
+        </h2>
+        <p class="lead">
+          <span class="fw-bold text-primary">Poker Manager</span> è un'applicazione progettata per gli appassionati di poker che desiderano
+          gestire tornei, monitorare le statistiche dei giocatori e visualizzare classifiche in modo semplice e intuitivo.
+        </p>
+
+        <h2 class="h4 fw-semibold border-bottom pb-2 mb-3 mt-5">
+          Chi siamo
+        </h2>
+        <p>
+          Sviluppato da <span class="fw-bold text-primary">Matteo D'Addesa</span>, Poker Manager nasce dalla passione per il poker e la tecnologia.
+        </p>
+
+        <h2 class="h4 fw-semibold border-bottom pb-2 mb-3 mt-5">
+          Versione
+        </h2>
+        <p class="mb-1">Versione attuale: <span class="fw-bold text-primary">5.0.0</span></p>
+        {# Usato 'text-muted' per le informazioni secondarie, migliorando la gerarchia visiva #}
+        <p class="text-muted">
+          Questa versione include un'architettura backend (Flask) completamente rivista, autenticazione basata su ruoli e un sistema di configurazione robusto per il deployment.
+        </p>
+
+
+        <div class="text-center mt-5 border-top pt-4">
+          <a href="https://x.com/matteodadde" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="btn btn-primary d-inline-flex align-items-center gap-2"
+             aria-label="Seguici su X (si apre in una nuova scheda)">
+            Seguici su X
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                 class="bi bi-twitter-x" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+            </svg>
+          </a>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

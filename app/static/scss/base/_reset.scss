@@ -1,0 +1,67 @@
+/* ----------------------------------------------
+   RESET CSS MODERNO
+---------------------------------------------- */
+
+/* 1. Applica box-sizing a <html> e fallo ereditare */
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit; /* Eredita box-sizing da <html> */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  vertical-align: baseline;
+}
+
+/* 2. Imposta l'altezza minima per layout moderni (es. sticky footer) */
+html,
+body {
+  height: 100%;
+}
+
+/* 3. Imposta i font-smoothing di base */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 4. Rimuovi stili di lista */
+ol,
+ul {
+  list-style: none;
+}
+
+/* 5. Immagini e media responsive di default */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* 6. Eredita font e rimuovi stili di default per gli input */
+button,
+input,
+select,
+textarea {
+  font: inherit; /* Eredita font-family, size, weight, etc. da body */
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 7. Reset tabelle */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}

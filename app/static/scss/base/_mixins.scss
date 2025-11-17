@@ -1,0 +1,57 @@
+// ----------------------------------------------
+// MIXINS UTILI GENERALI
+// ----------------------------------------------
+@use "sass:map";
+
+// Breakpoint per media query (Mobile-First)
+$breakpoints: (
+  "sm": 600px,  // Small (telefoni)
+  "md": 900px,  // Medium (tablet)
+  "lg": 1200px, // Large (desktop)
+  "xl": 1400px  // Extra Large (desktop larghi)
+);
+
+// Mixin per media query (MOBILE-FIRST: min-width)
+// @include m.respond-to("md") { ... }
+@mixin respond-to($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (min-width: map.get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  } @else {
+    @warn "Breakpoint '#{$breakpoint}' non trovato. Disponibili: #{map.keys($breakpoints)}.";
+  }
+}
+
+// Mixin per center flex container
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// Mixin per contenitore standard (desktop-first)
+@mixin container($max-width: 1140px, $padding-x: 1.5rem) {
+  max-width: $max-width;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: $padding-x;
+  padding-right: $padding-x;
+  width: 100%; // Assicura che non vada oltre
+}
+
+// Mixin per contenitore stretto (es. per form, pagine di testo)
+@mixin container-narrow($max-width: 720px, $padding-x: 1.5rem) {
+  @include container($max-width, $padding-x);
+}
+
+// Mixin per transizioni "lisce"
+@mixin transition(
+  $properties: (background-color, border-color, color, box-shadow, transform),
+  $duration: 0.2s,
+  $timing: ease-in-out
+) {
+  transition-property: $properties;
+  transition-duration: $duration;
+  transition-timing-function: $timing;
+}

@@ -1,0 +1,23 @@
+// ----------------------------------------------
+// FUNZIONI UTILI SASS
+// ----------------------------------------------
+@use "sass:color";
+@use "sass:math";
+
+// Funzione per convertire px in rem (base 16px di default)
+@function px-to-rem($px, $base: 16) {
+  @if unit($px) != 'px' {
+    @warn "Attenzione: #{$px} non è in pixel. La funzione px-to-rem richiede un valore in px.";
+  }
+  @return math.div($px, $base) * 1rem;
+}
+
+// Funzione per scurire un colore di una certa percentuale
+@function darken-percent($color, $percent) {
+  @return color.darken($color, $percent);
+}
+
+// Funzione per schiarire un colore di una certa percentuale
+@function lighten-percent($color, $percent) {
+  @return color.lighten($color, $percent);
+}

@@ -1,0 +1,425 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+  {% if tournament %}Modifica Torneo{% else %}Aggiungi Torneo{% endif %} | Poker Manager
+{% endblock %}
+
+{% block styles %}
+  {{ super() }}
+  <style>
+    .participant-entry {
+      border: 1px solid var(--colore-bordo, #dee2e6);
+      border-radius: var(--radius-md, 0.375rem);
+      padding: var(--sp-3, 1rem);
+      margin-bottom: var(--sp-3, 1rem);
+      background-color: var(--colore-sfondo, #f8f9fa);
+      position: relative;
+    }
+    .participant-entry .row {
+      align-items: flex-end;
+    }
+    .remove-participant-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      padding: 0.2rem 0.4rem;
+      line-height: 1;
+    }
+    .summary-card {
+      position: sticky;
+      top: 80px;
+    }
+    /* Stili per etichette piccole */
+    .form-label-sm {
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="mb-4">
+    {% if tournament %}
+      <a href="{{ url_for('tournaments.detail', tournament_id=tournament.id) }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Annulla Modifica
+      </a>
+    {% else %}
+      <a href="{{ url_for('tournaments.list') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Torna all'Elenco
+      </a>
+    {% endif %}
+  </div>
+
+  <form id="tournamentForm" method="POST"
+        action="{{ url_for('tournaments.edit_tournament', tournament_id=tournament.id) if tournament else url_for('tournaments.add_tournament') }}"
+        novalidate>
+    {{ form.csrf_token }}
+
+    <div class="row g-4">
+      <div class="col-lg-8">
+
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-dark text-white">
+            <h1 class="h4 mb-0">
+              {% if tournament %}
+                <i class="bi bi-pencil-square"></i> Modifica Dati Torneo
+              {% else %}
+                <i class="bi bi-plus-circle-fill"></i> Nuovo Torneo
+              {% endif %}
+            </h1>
+          </div>
+          <div class="card-body">
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                {% if form.name.errors %}
+                  <div class="invalid-feedback">{{ form.name.errors[0] }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6">
+                {{ form.tournament_date.label(class="form-label") }}
+                {{ form.tournament_date(class="form-control" + (" is-invalid" if form.tournament_date.errors else ""), type="date") }}
+              </div>
+
+              <div class="col-md-6">
+                {{ form.buy_in.label(class="form-label") }}
+                <div class="input-group">
+                  <span class="input-group-text">€</span>
+                  {{ form.buy_in(id="buy_in_amount", class="form-control" + (" is-invalid" if form.buy_in.errors else ""), type="number", step="0.01", min="0") }}
+                </div>
+                 {% if form.buy_in.errors %}
+                  <div class="invalid-feedback d-block">{{ form.buy_in.errors[0] }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-md-6">
+                {{ form.prize_pool.label(class="form-label") }}
+                <div class="input-group">
+                  <span class="input-group-text">€</span>
+                  {{ form.prize_pool(id="fixed_prize_pool", class="form-control" + (" is-invalid" if form.prize_pool.errors else ""), type="number", step="0.01", min="0") }}
+                </div>
+                <small class="text-muted">Lascia vuoto per calcolo automatico.</small>
+                 {% if form.prize_pool.errors %}
+                  <div class="invalid-feedback d-block">{{ form.prize_pool.errors[0] }}</div>
+                {% endif %}
+              </div>
+
+              <div class="col-12">
+                {{ form.location.label(class="form-label") }}
+                {{ form.location(class="form-control" + (" is-invalid" if form.location.errors else "")) }}
+                 {% if form.location.errors %}
+                  <div class="invalid-feedback">{{ form.location.errors[0] }}</div>
+                {% endif %}
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0"><i class="bi bi-people-fill"></i> Partecipanti</h2>
+            <button type="button" id="addParticipantBtn" class="btn btn-sm btn-outline-light d-inline-flex align-items-center gap-1">
+              <i class="bi bi-plus-lg"></i> Aggiungi
+            </button>
+          </div>
+
+          <div class="card-body">
+            <!-- Messaggio di errore validazione FieldList -->
+            {% if form.participants.errors and form.participants.errors[0] is string %}
+              <div class="alert alert-danger p-2" role="alert" style="font-size: 0.9rem;">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                {{ form.participants.errors[0] }}
+              </div>
+            {% endif %}
+
+            <div id="participantsContainer">
+
+              {% for p in form.participants %}
+              <div class="participant-entry" data-index="{{ loop.index0 }}">
+                {{ p.tp_id }}
+
+                <button type="button" class="btn btn-sm btn-outline-danger remove-participant-btn" aria-label="Rimuovi partecipante">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+
+                <div class="row g-2">
+
+                  <div class="col-md-4">
+                    {{ p.player_id.label(class="form-label form-label-sm") }}
+                    {{ p.player_id(class="form-select participant-player-select" + (" is-invalid" if p.player_id.errors else "")) }}
+                    {% if p.player_id.errors %}
+                      <div class="invalid-feedback d-block" style="font-size: 0.8rem;">{{ p.player_id.errors[0] }}</div>
+                    {% endif %}
+                  </div>
+
+                  <div class="col-6 col-md-2">
+                    {{ p.position.label(class="form-label form-label-sm") }}
+                    {{ p.position(class="form-control form-control-sm" + (" is-invalid" if p.position.errors else ""), type="number", min="1") }}
+                  </div>
+
+                  <div class="col-6 col-md-2">
+                    {{ p.rebuy.label(class="form-label form-label-sm") }}
+                    {{ p.rebuy(class="form-control form-control-sm participant-rebuy" + (" is-invalid" if p.rebuy.errors else ""), type="number", min="0", step="1") }}
+                  </div>
+
+                  <div class="col-6 col-md-2">
+                    {{ p.rebuy_total_spent.label(class="form-label form-label-sm") }}
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">€</span>
+                      {{ p.rebuy_total_spent(class="form-control participant-rebuy-amount" + (" is-invalid" if p.rebuy_total_spent.errors else ""), step="0.01", min="0") }}
+                    </div>
+                  </div>
+
+                  <div class="col-6 col-md-2">
+                    {{ p.prize.label(class="form-label form-label-sm") }}
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">€</span>
+                      {{ p.prize(class="form-control" + (" is-invalid" if p.prize.errors else ""), step="0.01", min="0") }}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              {% endfor %}
+
+            </div>
+
+            <div id="noParticipantsMsg" class="text-muted text-center py-3 {% if form.participants.entries %}d-none{% endif %}">
+              <i class="bi bi-info-circle"></i> Nessun partecipante ancora.
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div class="col-lg-4">
+        <div class="summary-card card shadow-sm">
+          <div class="card-header bg-secondary text-white">
+            <h2 class="h5 mb-0"><i class="bi bi-clipboard-data-fill"></i> Sommario</h2>
+          </div>
+          <div class="card-body">
+            <dl class="row">
+              <dt class="col-sm-6">Partecipanti</dt>
+              <dd class="col-sm-6 text-end"><span id="summaryParticipants">0</span></dd>
+
+              <dt class="col-sm-6">Buy-In Totale</dt>
+              <dd class="col-sm-6 text-end">€ <span id="summaryBaseBuyin">0.00</span></dd>
+
+              <dt class="col-sm-6">Spesa Rebuy Totale</dt>
+              <dd class="col-sm-6 text-end">€ <span id="summaryRebuySpent">0.00</span></dd>
+
+              <hr>
+
+              <dt class="col-sm-6 fw-bold">Montepremi Calcolato</dt>
+              <dd class="col-sm-6 text-end fw-bold fs-5 text-success">€ <span id="summaryCalculatedPool">0.00</span></dd>
+            </dl>
+            
+            <div id="pool-warning" class="alert alert-warning p-2 mt-2 d-none" role="alert" style="font-size: 0.85rem;">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <span id="pool-warning-text"></span>
+            </div>
+            
+          </div>
+          <div class="card-footer text-end">
+            <!-- === MODIFICA QUI 1: Aggiunto id="submit-tournament-btn" === -->
+            <button type="submit" id="submit-tournament-btn" class="btn btn-success d-inline-flex align-items-center gap-1">
+              <i class="bi bi-check-circle-fill"></i>
+              {% if tournament %}Salva Modifiche{% else %}Crea Torneo{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+
+  <!-- Template nuovo partecipante -->
+  <div id="participantTemplate" class="d-none">
+    <div class="participant-entry" data-index="__INDEX__">
+      <input type="hidden" name="participants-__INDEX__-tp_id" value="">
+
+      <button type="button" class="btn btn-sm btn-outline-danger remove-participant-btn" aria-label="Rimuovi partecipante">
+        <i class="bi bi-x-lg"></i>
+      </button>
+
+      <div class="row g-2">
+
+        <div class="col-md-4">
+          <label class="form-label form-label-sm" for="participants-__INDEX__-player_id">Giocatore</label>
+          <select name="participants-__INDEX__-player_id" id="participants-__INDEX__-player_id" class="form-select participant-player-select"></select>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label form-label-sm" for="participants-__INDEX__-position">Posizione</label>
+          <input type="number" name="participants-__INDEX__-position" id="participants-__INDEX__-position" class="form-control form-control-sm" min="1">
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label form-label-sm" for="participants-__INDEX__-rebuy">Rebuy</label>
+          <input type="number" name="participants-__INDEX__-rebuy" id="participants-__INDEX__-rebuy" class="form-control form-control-sm participant-rebuy" value="0" min="0" step="1">
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label form-label-sm" for="participants-__INDEX__-rebuy_total_spent">Rebuy (€)</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">€</span>
+            <input type="number" name="participants-__INDEX__-rebuy_total_spent" id="participants-__INDEX__-rebuy_total_spent" class="form-control participant-rebuy-amount" step="0.01" min="0" value="0.00">
+          </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label form-label-sm" for="participants-__INDEX__-prize">Vincita</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">€</span>
+            <input type="number" name="participants-__INDEX__-prize" id="participants-__INDEX__-prize" class="form-control" step="0.01" min="0" value="0.00">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+
+<!-- === MODIFICA QUI 2: Script JS aggiornato === -->
+<script>
+$(function() {
+
+  // --- Selettori ---
+  const container = $('#participantsContainer');
+  const template = $('#participantTemplate').html();
+  const addBtn = $('#addParticipantBtn');
+  const noMsg = $('#noParticipantsMsg');
+  const players = {{ all_players_json | tojson | safe }};
+  let index = {{ form.participants | length }};
+
+  // Selettori per il sommario e la validazione
+  const fixedPoolInput = $('#fixed_prize_pool');
+  const poolWarning = $('#pool-warning');
+  const poolWarningText = $('#pool-warning-text');
+  const buyInInput = $('#buy_in_amount');
+  const submitBtn = $('#submit-tournament-btn'); // <-- Selettore per il pulsante Salva
+
+  /**
+   * Inizializza Select2 su un elemento
+   * @param {jQuery} element - L'elemento <select>
+   */
+  function initSelect2(element) {
+    element.select2({ 
+      theme: 'bootstrap-5', 
+      width: '100%',
+      placeholder: '--- Seleziona Giocatore ---' 
+    });
+  }
+
+  // Inizializza tutti i Select2 esistenti al caricamento
+  initSelect2($('.participant-player-select'));
+
+  /**
+   * Aggiorna il box di sommario e controlla il montepremi.
+   * Abilita o disabilita il pulsante di salvataggio.
+   */
+  function refreshSummary() {
+    let count = 0;
+    let totalBuyin = 0;
+    let totalRebuy = 0;
+    const buyinValue = parseFloat(buyInInput.val()) || 0;
+
+    container.find('.participant-entry').each(function() {
+      // Conta solo se un giocatore è selezionato
+      const playerId = $(this).find('.participant-player-select').val();
+      if (playerId && playerId !== "0") {
+        count++;
+        totalBuyin += buyinValue;
+        totalRebuy += parseFloat($(this).find('.participant-rebuy-amount').val()) || 0;
+      }
+    });
+
+    const calculatedPool = totalBuyin + totalRebuy;
+    const fixedPool = parseFloat(fixedPoolInput.val()) || 0;
+
+    // Aggiorna valori sommario
+    $('#summaryParticipants').text(count);
+    $('#summaryBaseBuyin').text(totalBuyin.toFixed(2));
+    $('#summaryRebuySpent').text(totalRebuy.toFixed(2));
+    $('#summaryCalculatedPool').text(calculatedPool.toFixed(2));
+
+    // --- LOGICA DI VALIDAZIONE E BLOCCO BOTTONE ---
+    if (fixedPool > 0) {
+      // C'è un montepremi fisso, controlla la corrispondenza
+      if (fixedPool.toFixed(2) !== calculatedPool.toFixed(2)) {
+        // Disallineati
+        const warningMsg = `Attenzione: Il M.P. fisso (€${fixedPool.toFixed(2)}) non corrisponde a quello calcolato (€${calculatedPool.toFixed(2)}).`;
+        poolWarningText.text(warningMsg);
+        poolWarning.removeClass('d-none');
+        
+        // Disabilita il pulsante
+        submitBtn.prop('disabled', true);
+        submitBtn.attr('title', 'Correggere la discrepanza del montepremi per salvare.');
+        
+      } else {
+        // Allineati
+        poolWarning.addClass('d-none');
+        // Abilita il pulsante
+        submitBtn.prop('disabled', false);
+        submitBtn.removeAttr('title');
+      }
+    } else {
+      // M.P. fisso non impostato (0 o vuoto), è sempre valido
+      poolWarning.addClass('d-none');
+      // Abilita il pulsante
+      submitBtn.prop('disabled', false);
+      submitBtn.removeAttr('title');
+    }
+    // --- FINE LOGICA DI VALIDAZIONE ---
+  }
+
+  // --- Event Handlers ---
+
+  // Aggiungi partecipante
+  addBtn.on('click', function() {
+    let html = template.replace(/__INDEX__/g, index);
+    let entry = $(html).appendTo(container);
+    let select = entry.find('.participant-player-select');
+    
+    // Popola le opzioni del select
+    players.forEach(p => select.append(new Option(p[1], p[0])));
+    
+    initSelect2(select);
+    index++;
+    noMsg.addClass('d-none');
+    refreshSummary(); // Aggiorna sommario e validazione
+  });
+
+  // Rimuovi partecipante
+  container.on('click', '.remove-participant-btn', function() {
+    $(this).closest('.participant-entry').remove();
+    refreshSummary(); // Aggiorna sommario e validazione
+    if (!container.find('.participant-entry').length) {
+      noMsg.removeClass('d-none');
+    }
+  });
+
+  // Aggiorna sommario quando cambiano i campi rilevanti
+  container.on('input change', '.participant-rebuy-amount, .participant-player-select', refreshSummary);
+  buyInInput.on('input change', refreshSummary);
+  fixedPoolInput.on('input change', refreshSummary); 
+
+  // Calcola al caricamento della pagina
+  refreshSummary();
+});
+</script>
+{% endblock %}

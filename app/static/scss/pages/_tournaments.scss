@@ -1,0 +1,51 @@
+/* app/static/scss/pages/_tournaments.scss */
+@use '../base/variables' as *;
+@use '../base/mixins' as m;
+
+/* Stili comuni per le pagine tournaments */
+
+/* Pagina Lista - DataTables */
+#tournamentsTable {
+  th {
+    white-space: nowrap; // Evita che i titoli vadano a capo
+  }
+}
+
+/* Pagina Dettaglio - Intestazione */
+.tournament-detail-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3); // 16px
+  margin-bottom: var(--sp-4); // 24px
+}
+
+/* Pagina Dettaglio - Griglia Info */
+.tournament-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-3); // 16px
+  margin-bottom: var(--sp-4);
+
+  div {
+    strong {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--colore-testo-soft);
+      margin-bottom: var(--sp-1);
+    }
+    span {
+      font-size: 1.125rem;
+      font-weight: var(--font-weight-medium);
+    }
+  }
+}
+
+/* Pagina Dettaglio - Tabella Partecipanti */
+#participantsTable {
+  // Stili specifici per la tabella partecipanti, se necessari
+}
+
+/* Bottone Elimina (usato con un form nascosto) */
+.delete-tournament-form {
+  display: inline-block; // Permette di affiancarlo ad altri bottoni
+}
