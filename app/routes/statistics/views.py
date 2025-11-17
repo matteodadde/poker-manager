@@ -8,7 +8,7 @@ from flask_login import login_required  # <-- Aggiunto login_required
 from sqlalchemy.exc import SQLAlchemyError
 
 from . import statistics_bp as bp  # Usa alias 'bp'
-from .utils import get_leaderboard_stats
+from .utils import get_leaderboard_stats, get_total_prize_pool_sum
 
 
 @bp.route("/leaderboard", strict_slashes=False)
@@ -21,6 +21,7 @@ def leaderboard():
 
     try:
         stats = get_leaderboard_stats()
+        total_money = get_total_prize_pool_sum()
         current_app.logger.info(
             f"Accesso alla leaderboard: {len(stats)} giocatori trovati con statistiche."
         )
@@ -43,4 +44,4 @@ def leaderboard():
         flash(error_message, "danger")  # Mostra flash anche per errori generici
 
     # Passa sempre stats (che può essere vuota) e error_message (che può essere None)
-    return render_template(template_path, stats=stats, error_message=error_message)
+    return render_template(template_path, stats=stats, total_money=total_money, error_message=error_message)
