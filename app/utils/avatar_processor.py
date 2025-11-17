@@ -21,10 +21,9 @@ class AvatarProcessor:
         self.save_dir = Path(current_app.config["AVATAR_SAVE_PATH"])
         self.public_url_base = current_app.config["AVATAR_PUBLIC_URL"]
         
-        # --- MODIFICA: Carica entrambe le dimensioni ---
+        # Carica entrambe le dimensioni
         self.thumb_size = current_app.config["AVATAR_FINAL_SIZE"]
         self.full_size = current_app.config["AVATAR_FULL_SIZE"]
-        # --- FINE MODIFICA ---
         
         self.max_dim = current_app.config["AVATAR_MAX_ORIGINAL_DIMENSION"]
         self.max_size_bytes = current_app.config["AVATAR_MAX_FILE_SIZE_BYTES"]
@@ -37,10 +36,11 @@ class AvatarProcessor:
         self.full_filepath = self.save_dir / self.full_filename
 
     def _validate_file(self) -> Tuple[bool, str]:
-        # ... (Questa funzione rimane INVARIATA) ...
         """Controlla dimensione e tipo preliminare."""
+        # Sposta il cursore alla fine per leggere la dimensione
         self.file_storage.seek(0, os.SEEK_END)
         file_length = self.file_storage.tell()
+        # Riporta il cursore all'inizio (importante, ma non fidiamoci solo di questo)
         self.file_storage.seek(0)
         
         if file_length > self.max_size_bytes:
@@ -66,8 +66,6 @@ class AvatarProcessor:
         img = img.convert("RGBA")
 
         # 2. Ritaglio centrato (crop quadrato)
-        # Nota: L'immagine che riceviamo è GIA' ritagliata da Cropper.js,
-        # ma questa logica la rende perfettamente quadrata se non lo fosse.
         size = min(img.size)
         left = (img.width - size) / 2
         top = (img.height - size) / 2
@@ -101,22 +99,23 @@ class AvatarProcessor:
         
         return img_thumb, img_full
 
-    def _delete_existing_files(self):
-        """Rimuove vecchi file avatar (sia thumb che full)."""
+    def _cleanup_old_files(self):
+        """
+        Rimuove vecchi file avatar (es. vecchi JPG) MA preserva quelli appena salvati.
+        Viene eseguito DOPO il salvataggio per sicurezza.
+        """
         try:
-            # Rimuove il file .png (e potenziali .jpg, ecc.)
             for f in self.save_dir.glob(f"{self.player_id}.*"):
-                if not f.name.endswith('_full.png'): # Non rimuovere il full qui
-                    f.unlink()
-            
-            # Rimuove esplicitamente il file _full.png
-            full_file = self.save_dir / self.full_filename
-            if full_file.exists():
-                full_file.unlink()
+                # IMPORTANTISSIMO: Non cancellare i file PNG che abbiamo appena creato!
+                if f.name == self.final_filename or f.name == self.full_filename:
+                    continue
+                
+                # Cancella tutto il resto (vecchi jpg, webp, etc.)
+                f.unlink()
                 
         except OSError as e:
             current_app.logger.error(
-                f"Errore rimozione vecchio avatar per {self.player_id}: {e}"
+                f"Errore pulizia vecchi avatar per {self.player_id}: {e}"
             )
             pass
 
@@ -130,6 +129,12 @@ class AvatarProcessor:
             return {"success": False, "error": error_msg}
 
         try:
+            # --- FIX CRASH: RESET CURSORE ---
+            # Assicuriamo che il cursore sia all'inizio prima che Pillow legga.
+            # Questo previene la creazione di file da 0 byte.
+            self.file_storage.seek(0)
+            # --------------------------------
+
             # 1. Apertura sicura
             with Image.open(self.file_storage.stream) as img:
                 
@@ -137,23 +142,22 @@ class AvatarProcessor:
                 if img.format not in ["JPEG", "PNG", "WEBP"]:
                     return {"success": False, "error": "Formato immagine non valido."}
 
-                # 3. Validazione dimensioni (sull'immagine ricevuta)
+                # 3. Validazione dimensioni
                 if img.width > self.max_dim or img.height > self.max_dim:
                     return {
                         "success": False,
                         "error": f"Immagine troppo grande. Dimensioni massime: {self.max_dim}x{self.max_dim}px."
                     }
                 
-                # 4. Elaborazione (produce thumb e full)
+                # 4. Elaborazione (produce thumb e full in memoria)
                 processed_thumb, processed_full = self._process_image(img)
 
             # 5. Assicura che la directory esista
             self.save_dir.mkdir(parents=True, exist_ok=True)
             
-            # 6. Rimuovi vecchi file
-            self._delete_existing_files()
-
-            # 7. Salvataggio finale (PNG ottimizzato)
+            # --- NUOVA LOGICA SICURA: SALVA PRIMA, PULISCI DOPO ---
+            
+            # 6. Salvataggio finale (Sovrascrive se esiste già un PNG)
             processed_thumb.save(
                 self.final_filepath, 
                 "PNG", 
@@ -165,10 +169,15 @@ class AvatarProcessor:
                 optimize=True
             )
             
+            # 7. Pulizia residui (Cancella solo se non sono i file appena salvati)
+            self._cleanup_old_files()
+            
+            # ------------------------------------------------------
+
             # 8. Costruisci l'URL pubblico (del thumbnail)
+            # Aggiungiamo un timestamp per forzare il refresh della cache del browser
             public_url = f"{self.public_url_base}{self.final_filename}?v={int(os.path.getmtime(self.final_filepath))}"
 
-            # L'API restituisce l'URL del THUMBNAIL per l'anteprima
             return {"success": True, "url": public_url}
 
         except (IOError, OSError, Image.UnidentifiedImageError) as e:
